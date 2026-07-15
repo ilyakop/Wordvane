@@ -6,23 +6,55 @@ if ( ! current_user_can( 'manage_options' ) ) {
 	wp_die( esc_html__( 'Unauthorized', 'wordvane' ) );
 }
 
-$settings   = get_option( 'wv_settings', [] );
-$active_tab = sanitize_text_field( wp_unslash( $_GET['tab'] ?? 'dna' ) );
-$active_tab = in_array( $active_tab, [ 'dna', 'publishing' ], true ) ? $active_tab : 'dna';
-$categories = get_categories( [ 'hide_empty' => false ] );
+$settings    = get_option( 'wv_settings', [] );
+$is_pro      = WV_Features::is_pro();
+$upgrade_url = WV_Features::get_upgrade_url();
+$categories  = get_categories( [ 'hide_empty' => false ] );
+
+/**
+ * Filters the tabs shown on the Wordvane Settings page.
+ *
+ * Pro injects a 'license' tab (Freemius license key + plan info),
+ * an 'agency' tab (multi-site management), and a 'team' tab (user roles).
+ * Tab content is rendered via the 'wordvane_settings_tab_content' action.
+ *
+ * @since 1.0.0
+ * @hook  wordvane_settings_tabs
+ * @param array $tabs Associative array of slug => label. Default contains
+ *                    'dna' and 'publishing'.
+ */
+$tabs = apply_filters( 'wordvane_settings_tabs', [
+	'dna'        => __( 'Business DNA', 'wordvane' ),
+	'publishing' => __( 'Publishing', 'wordvane' ),
+] );
+
+$valid_tabs = array_keys( $tabs );
+$active_tab = sanitize_text_field( wp_unslash( $_GET['tab'] ?? $valid_tabs[0] ) );
+$active_tab = in_array( $active_tab, $valid_tabs, true ) ? $active_tab : $valid_tabs[0];
+
+/**
+ * Filters the number of Business DNA profiles a user can store.
+ *
+ * Free tier is locked to 1. Pro can allow multiple profiles for agencies
+ * managing many clients under one WordPress installation.
+ *
+ * @since 1.0.0
+ * @hook  wordvane_business_dna_profiles
+ * @param int $count Max allowed profiles. Default 1.
+ */
+$allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 ?>
 <div class="wrap wv-settings-page">
 	<h1 class="wp-heading-inline"><?php esc_html_e( 'Wordvane — Settings', 'wordvane' ); ?></h1>
 
+
 	<nav class="nav-tab-wrapper">
-		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wv-settings&tab=dna' ) ); ?>"
-			class="nav-tab <?php echo 'dna' === $active_tab ? 'nav-tab-active' : ''; ?>">
-			<?php esc_html_e( 'Business DNA', 'wordvane' ); ?>
+		<?php foreach ( $tabs as $slug => $label ) : ?>
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wv-settings&tab=' . urlencode( $slug ) ) ); ?>"
+			class="nav-tab <?php echo $slug === $active_tab ? 'nav-tab-active' : ''; ?>">
+			<?php echo esc_html( $label ); ?>
 		</a>
-		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wv-settings&tab=publishing' ) ); ?>"
-			class="nav-tab <?php echo 'publishing' === $active_tab ? 'nav-tab-active' : ''; ?>">
-			<?php esc_html_e( 'Publishing', 'wordvane' ); ?>
-		</a>
+		<?php endforeach; ?>
 	</nav>
 
 	<div id="wv-settings-feedback" class="wv-settings-feedback" style="display:none;"></div>
@@ -30,7 +62,20 @@ $categories = get_categories( [ 'hide_empty' => false ] );
 	<?php if ( 'dna' === $active_tab ) : ?>
 	<!-- Business DNA Tab -->
 	<div class="wv-settings-section">
-		<h2><?php esc_html_e( 'Business Type', 'wordvane' ); ?></h2>
+		<h2>
+			<?php esc_html_e( 'Business Type', 'wordvane' ); ?>
+			<?php if ( $allowed_profiles > 1 ) : ?>
+			<span class="wv-profile-badge">
+				<?php
+				printf(
+					/* translators: %d: max allowed profiles */
+					esc_html__( 'Up to %d profiles', 'wordvane' ),
+					$allowed_profiles
+				);
+				?>
+			</span>
+			<?php endif; ?>
+		</h2>
 		<div class="wv-business-type-cards">
 			<?php
 			$business_types = [
@@ -264,6 +309,57 @@ $categories = get_categories( [ 'hide_empty' => false ] );
 			</button>
 			<span id="wv-save-spinner" class="spinner" style="float:none;display:none;"></span>
 		</p>
+	</div>
+
+	<?php else : ?>
+	<!-- Pro / custom tabs registered via wordvane_settings_tabs filter -->
+	<div class="wv-settings-section">
+		<?php
+		/**
+		 * Fires when a non-default settings tab is active.
+		 *
+		 * Pro uses this to render License, Agency, and Team tab content
+		 * without modifying the free plugin file.
+		 *
+		 * @since 1.0.0
+		 * @hook  wordvane_settings_tab_content
+		 * @param string $active_tab The currently active tab slug.
+		 */
+		do_action( 'wordvane_settings_tab_content', $active_tab );
+		?>
+	</div>
+	<?php endif; ?>
+
+	<?php if ( ! $is_pro && ! get_user_meta( get_current_user_id(), 'wv_dismissed_settings_comparison', true ) ) : ?>
+	<div class="wv-card wv-plan-compare-card" id="wv-settings-compare-card">
+		<button type="button"
+			class="wv-dismiss-btn"
+			data-dismiss-key="settings_comparison"
+			aria-label="<?php esc_attr_e( 'Dismiss', 'wordvane' ); ?>">✕</button>
+		<div class="wv-plan-compare-inner">
+			<div class="wv-plan-col">
+				<span class="wv-plan-badge wv-plan-badge-free"><?php esc_html_e( 'Free', 'wordvane' ); ?></span>
+				<ul>
+					<li>✓ <?php esc_html_e( '3 article types', 'wordvane' ); ?></li>
+					<li>✓ <?php esc_html_e( '5 articles / month', 'wordvane' ); ?></li>
+					<li>✓ <?php esc_html_e( '1 Business DNA profile', 'wordvane' ); ?></li>
+					<li>✓ <?php esc_html_e( 'Gutenberg block publishing', 'wordvane' ); ?></li>
+					<li>✓ <?php esc_html_e( 'SEO integration (Yoast, Rank Math)', 'wordvane' ); ?></li>
+				</ul>
+			</div>
+			<div class="wv-plan-col wv-plan-col-pro">
+				<span class="wv-plan-badge wv-plan-badge-pro"><?php esc_html_e( 'Pro', 'wordvane' ); ?></span>
+				<ul>
+					<?php foreach ( wv_get_pro_features() as $feature ) : ?>
+					<li>✓ <?php echo esc_html( $feature['label'] ); ?></li>
+					<?php endforeach; ?>
+				</ul>
+				<a href="<?php echo esc_url( $upgrade_url ); ?>"
+					class="button wv-cta-btn">
+					<?php esc_html_e( 'Get Wordvane Pro →', 'wordvane' ); ?>
+				</a>
+			</div>
+		</div>
 	</div>
 	<?php endif; ?>
 </div>

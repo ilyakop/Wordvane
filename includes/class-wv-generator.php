@@ -27,6 +27,8 @@ class WV_Generator {
 			return;
 		}
 
+		$settings = get_option( 'wv_settings', [] );
+
 		$keyword             = sanitize_text_field( wp_unslash( $_POST['keyword'] ?? '' ) );
 		$secondary_keywords  = sanitize_text_field( wp_unslash( $_POST['secondary_keywords'] ?? '' ) );
 		$article_type        = sanitize_text_field( wp_unslash( $_POST['article_type'] ?? 'how-to' ) );
@@ -38,17 +40,74 @@ class WV_Generator {
 			return;
 		}
 
-		$settings = get_option( 'wv_settings', [] );
+		/**
+		 * Filters the generation arguments before the AI prompt is built.
+		 *
+		 * Pro uses this to inject bulk-queue context, content-refresh flags,
+		 * override max_tokens, swap in a different DNA profile, or pre-populate
+		 * the optional '_system_prompt' / '_user_message' keys to bypass the
+		 * free prompt templates entirely.
+		 *
+		 * @since 1.0.0
+		 * @hook  wordvane_generation_args
+		 * @param array {
+		 *   @type string $keyword             Primary keyword.
+		 *   @type string $secondary_keywords  Comma-separated secondary keywords.
+		 *   @type string $article_type        Content type slug (how-to, spotlight, faq, or Pro slugs).
+		 *   @type int    $featured_product    Product array index, or -1 for none.
+		 *   @type string $custom_instructions Extra user-supplied instructions.
+		 *   @type array  $settings            Business DNA option array.
+		 *   @type int    $max_tokens          AI client max_tokens. Default 4096.
+		 *   @type string $_system_prompt      Optional: full system-prompt override (skips free template).
+		 *   @type string $_user_message       Optional: full user-message override (skips free template).
+		 * }
+		 * @param int $user_id ID of the user initiating generation.
+		 */
+		$generation_args = apply_filters( 'wordvane_generation_args', [
+			'keyword'             => $keyword,
+			'secondary_keywords'  => $secondary_keywords,
+			'article_type'        => $article_type,
+			'featured_product'    => $featured_product,
+			'custom_instructions' => $custom_instructions,
+			'settings'            => $settings,
+			'max_tokens'          => 4096,
+		], get_current_user_id() );
 
-		$system_prompt = $this->build_system_prompt( $settings, $keyword, $secondary_keywords, $article_type, $featured_product );
-		$user_message  = $this->build_user_message( $article_type, $keyword, $secondary_keywords, $settings, $featured_product, $custom_instructions );
+		$system_prompt = $generation_args['_system_prompt']
+			?? $this->build_system_prompt(
+				$generation_args['settings'],
+				$generation_args['keyword'],
+				$generation_args['secondary_keywords'],
+				$generation_args['article_type'],
+				$generation_args['featured_product']
+			);
+
+		$user_message = $generation_args['_user_message']
+			?? $this->build_user_message(
+				$generation_args['article_type'],
+				$generation_args['keyword'],
+				$generation_args['secondary_keywords'],
+				$generation_args['settings'],
+				$generation_args['featured_product'],
+				$generation_args['custom_instructions']
+			);
+
+		/**
+		 * Fires immediately before the AI generation call.
+		 * Pro uses this for pre-generation logging, queue status updates, etc.
+		 *
+		 * @since 1.0.0
+		 * @hook  wordvane_before_generate
+		 * @param array $generation_args Filtered generation arguments.
+		 */
+		do_action( 'wordvane_before_generate', $generation_args );
 
 		$prompt = wp_ai_client_prompt()
 			->using_system_instruction( $system_prompt )
 			->with_text( $user_message )
-			->using_max_tokens( 4096 );
+			->using_max_tokens( $generation_args['max_tokens'] );
 
-		$model_pref = $settings['model_preference'] ?? '';
+		$model_pref = $generation_args['settings']['model_preference'] ?? '';
 		if ( ! empty( $model_pref ) ) {
 			$prompt = $prompt->using_model_preference( $model_pref );
 		}
@@ -66,6 +125,18 @@ class WV_Generator {
 		}
 
 		WV_Limits::increment_usage();
+
+		/**
+		 * Fires after a successful AI generation.
+		 * Pro uses this for post-generation logging, reporting, and white-label hooks.
+		 *
+		 * @since 1.0.0
+		 * @hook  wordvane_after_generate
+		 * @param string $result          Raw generated article text.
+		 * @param array  $generation_args Filtered generation arguments.
+		 */
+		do_action( 'wordvane_after_generate', $result, $generation_args );
+
 		wp_send_json_success( [ 'text' => $result ] );
 	}
 

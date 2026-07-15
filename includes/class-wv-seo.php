@@ -65,7 +65,25 @@ class WV_SEO {
 			return;
 		}
 
-		$post_id    = get_the_ID();
+		$post_id = get_the_ID();
+
+		/**
+		 * Filters the schema types Wordvane outputs in <head> for a post.
+		 *
+		 * Free tier outputs 'FAQPage' when FAQ data exists. Pro can add or
+		 * replace schema types (e.g. 'HowTo', 'Article', 'Product'). Remove
+		 * 'FAQPage' from the array to suppress the default FAQ block entirely.
+		 *
+		 * @since 1.0.0
+		 * @hook  wordvane_seo_schema_types
+		 * @param string[] $types   Schema @type values to output. Default ['FAQPage'].
+		 * @param int      $post_id Current post ID.
+		 */
+		$schema_types = (array) apply_filters( 'wordvane_seo_schema_types', [ 'FAQPage' ], $post_id );
+		if ( ! in_array( 'FAQPage', $schema_types, true ) ) {
+			return;
+		}
+
 		$faq_schema = get_post_meta( $post_id, '_wv_faq_schema', true );
 		if ( empty( $faq_schema ) || ! is_array( $faq_schema ) ) {
 			return;

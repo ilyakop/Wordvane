@@ -14,6 +14,7 @@ class WV_Admin {
 		add_action( 'wp_ajax_wv_check_limit', [ $this, 'ajax_check_limit' ] );
 		add_action( 'wp_ajax_wv_save_checklist', [ $this, 'ajax_save_checklist' ] );
 		add_action( 'wp_ajax_wv_suggest_keyword', [ $this, 'ajax_suggest_keyword' ] );
+		add_action( 'wp_ajax_wv_dismiss_upsell', [ $this, 'ajax_dismiss_upsell' ] );
 	}
 
 	public function register_menus() {
@@ -62,6 +63,18 @@ class WV_Admin {
 			'wv-wizard',
 			[ $this, 'page_wizard' ]
 		);
+
+		/**
+		 * Fires after Wordvane's built-in submenu pages are registered.
+		 *
+		 * Pro uses this to register additional submenu pages (Bulk Queue,
+		 * Content Calendar) without modifying the free plugin.
+		 *
+		 * @since 1.0.0
+		 * @hook  wordvane_admin_menu_items
+		 * @param string $parent_slug The parent menu slug ('wv-generator').
+		 */
+		do_action( 'wordvane_admin_menu_items', 'wv-generator' );
 	}
 
 	public function enqueue_assets( $hook ) {
@@ -92,6 +105,14 @@ class WV_Admin {
 		);
 
 		$settings = get_option( 'wv_settings', [] );
+		$is_pro   = WV_Features::is_pro();
+
+		$fs              = function_exists( 'wordvane_fs' ) ? wordvane_fs() : null;
+		$trial_available = $fs
+			&& method_exists( $fs, 'is_trial_utilized' )
+			&& ! $fs->is_trial_utilized()
+			&& method_exists( $fs, 'get_trial_url' );
+		$trial_url       = $trial_available ? $fs->get_trial_url() : null;
 
 		wp_localize_script( 'wv-admin', 'wvAdmin', [
 			'ajaxurl'        => admin_url( 'admin-ajax.php' ),
@@ -105,6 +126,9 @@ class WV_Admin {
 			'products'       => $settings['products'] ?? [],
 			'hasAiProvider'  => function_exists( 'wp_ai_client_prompt' ),
 			'checklist'      => get_user_meta( get_current_user_id(), 'wv_checklist', true ) ?: [],
+			'isPro'          => $is_pro,
+			'upgradeUrl'     => WV_Features::get_upgrade_url(),
+			'trialUrl'       => $trial_url,
 			'strings'        => [
 				'generating'    => __( 'Generating your article...', 'wordvane' ),
 				'limit_reached' => __( 'Monthly limit reached.', 'wordvane' ),
@@ -225,6 +249,24 @@ class WV_Admin {
 		);
 
 		wp_send_json_success( [ 'keyword' => $keyword ] );
+	}
+
+	public function ajax_dismiss_upsell() {
+		check_ajax_referer( 'wv_nonce', 'nonce' );
+
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error();
+		}
+
+		$allowed = [ 'settings_comparison', 'insights_upgrade' ];
+		$key     = sanitize_key( wp_unslash( $_POST['key'] ?? '' ) );
+
+		if ( ! in_array( $key, $allowed, true ) ) {
+			wp_send_json_error( [ 'message' => 'Invalid key.' ] );
+		}
+
+		update_user_meta( get_current_user_id(), 'wv_dismissed_' . $key, 1 );
+		wp_send_json_success();
 	}
 
 	private function sanitize_settings( $data ) {

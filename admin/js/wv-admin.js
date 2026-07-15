@@ -319,6 +319,68 @@
         }
     };
 
+    /* ── Pro Locked Cards & Popover ─────────────────── */
+    const ProCards = {
+        init() {
+            if (!$('.wv-generator-page').length) return;
+
+            // Locked card click → popover (skip enabled cards)
+            $(document).on('click keydown', '.wv-article-type-card.wv-type-locked', function(e) {
+                if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                e.stopPropagation();
+                const $card = $(this);
+                const desc  = $card.data('pro-desc') || '';
+                const $pop  = $('#wv-pro-type-popover');
+
+                $pop.find('.wv-pro-popover-desc').text(desc);
+
+                // Position below the card using fixed coords
+                const rect = $card[0].getBoundingClientRect();
+                let left = rect.left;
+                // Prevent right-side overflow
+                if (left + 248 > window.innerWidth) {
+                    left = window.innerWidth - 256;
+                }
+                $pop.css({ top: rect.bottom + 6, left: Math.max(8, left) });
+                $pop.addClass('wv-popover-open');
+            });
+
+            $(document).on('click', '.wv-pro-popover-close', function() {
+                $('#wv-pro-type-popover').removeClass('wv-popover-open');
+            });
+
+            // Click outside closes popover
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.wv-type-locked, .wv-pro-popover').length) {
+                    $('#wv-pro-type-popover').removeClass('wv-popover-open');
+                }
+            });
+
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    $('#wv-pro-type-popover').removeClass('wv-popover-open');
+                }
+            });
+        }
+    };
+
+    /* ── Upsell Dismiss ──────────────────────────────── */
+    const UpsellDismiss = {
+        init() {
+            $(document).on('click', '.wv-dismiss-btn', function() {
+                const key = $(this).data('dismiss-key');
+                const $widget = $(this).closest('#wv-insights-upgrade-widget, #wv-settings-compare-card');
+                $widget.fadeOut(200);
+                $.post(wvAdmin.ajaxurl, {
+                    action: 'wv_dismiss_upsell',
+                    nonce:  wvAdmin.nonce,
+                    key:    key
+                });
+            });
+        }
+    };
+
     /* ── Generator ───────────────────────────────────── */
     const Generator = {
         currentHtml: '',
@@ -335,7 +397,12 @@
                 $('#wv-keyword').val(decodeURIComponent(suggestedKeyword));
             }
 
-            initCardSelection('.wv-article-type-card', 'selected', null);
+            // Card selection — skip locked Pro cards
+            $(document).on('click', '.wv-article-type-card', function() {
+                if ($(this).hasClass('wv-type-locked')) return; // handled by ProCards
+                $('.wv-article-type-card').removeClass('selected');
+                $(this).addClass('selected');
+            });
 
             $(document).on('click', '#wv-generate-btn', () => this.generate());
             $(document).on('click', '#wv-regenerate', () => this.generate());
@@ -582,6 +649,7 @@
                 post_title:       $('#wv-post-title').val(),
                 post_content:     this.currentHtml,
                 post_status:      postStatus,
+                post_type:        $('#wv-post-type').val() || 'post',
                 category:         $('#wv-post-category').val(),
                 slug:             $('#wv-slug').val(),
                 meta_title:       $('#wv-meta-title').val(),
@@ -678,6 +746,8 @@
         Settings.init();
         Generator.init();
         Insights.init();
+        ProCards.init();
+        UpsellDismiss.init();
     });
 
 })(jQuery);

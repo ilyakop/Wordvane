@@ -69,6 +69,8 @@ $checklist_tooltips = [
 	6 => __( 'Internal links tell Google which pages are important and keep readers on your site longer.', 'wordvane' ),
 ];
 $checklist_complete = count( $checklist );
+$is_pro             = WV_Features::is_pro();
+$upgrade_url        = WV_Features::get_upgrade_url();
 ?>
 <div class="wrap wv-insights-page">
 	<h1><?php esc_html_e( 'Your SEO Playbook', 'wordvane' ); ?></h1>
@@ -233,24 +235,15 @@ $checklist_complete = count( $checklist );
 		</ul>
 	</div>
 
-	<?php if ( $total_generated >= 2 ) : ?>
-	<!-- Section 6: Upgrade Prompt -->
-	<div class="wv-insights-section">
-		<div class="wv-upgrade-box">
-			<h2>🚀 <?php esc_html_e( 'Ready to scale?', 'wordvane' ); ?></h2>
-			<p><?php esc_html_e( 'You have seen what Wordvane can do. Pro removes every limitation:', 'wordvane' ); ?></p>
-			<ul>
-				<li>✓ <?php esc_html_e( 'Unlimited article generation', 'wordvane' ); ?></li>
-				<li>✓ <?php esc_html_e( 'Bulk queue — schedule 50 articles at once', 'wordvane' ); ?></li>
-				<li>✓ <?php esc_html_e( 'All 7 article types including Comparison and Local SEO', 'wordvane' ); ?></li>
-				<li>✓ <?php esc_html_e( 'Keyword suggester — never run out of ideas', 'wordvane' ); ?></li>
-				<li>✓ <?php esc_html_e( 'Article length control (800 / 1500 / 2500 words)', 'wordvane' ); ?></li>
-			</ul>
-			<a href="https://topdevs.net/wordvane-pro" target="_blank" rel="noopener noreferrer"
-				class="button button-primary wv-upgrade-btn">
-				<?php esc_html_e( 'Get Wordvane Pro →', 'wordvane' ); ?>
-			</a>
-		</div>
-	</div>
-	<?php endif; ?>
+	<?php
+	/**
+	 * Fires at the end of the Insights dashboard, after all free sections.
+	 *
+	 * Pro uses this to register content refresh suggestions and agency reporting cards.
+	 *
+	 * @since 1.0.0
+	 * @hook  wordvane_dashboard_widgets
+	 */
+	do_action( 'wordvane_dashboard_widgets' );
+	?>
 </div>

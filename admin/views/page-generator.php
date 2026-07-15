@@ -17,6 +17,8 @@ $days_until_reset = WV_Limits::get_days_until_reset();
 $reset_date       = WV_Limits::get_reset_date();
 $show_welcome     = isset( $_GET['wv_welcome'] ) && '1' === $_GET['wv_welcome'];
 $categories       = get_categories( [ 'hide_empty' => false ] );
+$is_pro           = WV_Features::is_pro();
+$upgrade_url      = WV_Features::get_upgrade_url();
 
 $wp_version_ok  = version_compare( $wp_version, '7.0', '>=' );
 $ai_provider_ok = function_exists( 'wp_ai_client_prompt' );
@@ -29,6 +31,103 @@ if ( $usage >= 4 ) {
 if ( $limit_reached ) {
 	$bar_color = 'wv-bar-red';
 }
+
+/**
+ * Filters the article types available in the generator UI.
+ *
+ * Each entry is keyed by the type slug sent to the AJAX handler.
+ * Pro adds Comparison, Listicle, Category Page, and WooCommerce Product
+ * Description by filtering this array. Free ships 3 types.
+ *
+ * @since 1.0.0
+ * @hook  wordvane_article_types
+ * @param array[] $types {
+ *   Associative array keyed by type slug.
+ *   @type string $icon Icon emoji shown on the card.
+ *   @type string $name Display name.
+ *   @type string $desc One-line description shown on the card.
+ * }
+ */
+$base_type_slugs = [ 'how-to', 'spotlight', 'faq' ];
+$article_types   = apply_filters( 'wordvane_article_types', [
+	'how-to' => [
+		'icon' => '📖',
+		'name' => __( 'How-To Guide', 'wordvane' ),
+		'desc' => __( 'Step-by-step tutorial. Best for teaching something your audience wants to learn.', 'wordvane' ),
+	],
+	'spotlight' => [
+		'icon' => '⭐',
+		'name' => __( 'Spotlight', 'wordvane' ),
+		'desc' => __( 'Showcase one product or service in depth. Great for converting browsers to buyers.', 'wordvane' ),
+	],
+	'faq' => [
+		'icon' => '❓',
+		'name' => __( 'FAQ Post', 'wordvane' ),
+		'desc' => __( '5 questions your customers always ask. Great for Google featured snippets.', 'wordvane' ),
+	],
+] );
+
+$enabled_types = [];
+$locked_types  = [];
+
+if ( $is_pro ) {
+	$enabled_types = $article_types;
+} else {
+	foreach ( $article_types as $slug => $type ) {
+		if ( in_array( $slug, $base_type_slugs, true ) ) {
+			$enabled_types[ $slug ] = $type;
+		} else {
+			$locked_types[ $slug ] = $type; // Pro plugin installed but no license
+		}
+	}
+	// Hardcoded Pro preview cards — always show even when Pro plugin is not installed
+	$pro_preview_types = [
+		'comparison'    => [
+			'icon' => '⚖️',
+			'name' => __( 'Comparison', 'wordvane' ),
+			'desc' => __( 'X vs Y articles with pros/cons table and final verdict. High buying intent.', 'wordvane' ),
+		],
+		'listicle'      => [
+			'icon' => '📋',
+			'name' => __( 'Listicle', 'wordvane' ),
+			'desc' => __( 'Ranked list post — one H2 per item. Great for featured snippets.', 'wordvane' ),
+		],
+		'category-page' => [
+			'icon' => '🗂️',
+			'name' => __( 'Category Page', 'wordvane' ),
+			'desc' => __( 'Keyword-rich landing page with internal link structure.', 'wordvane' ),
+		],
+		'woo-product'   => [
+			'icon' => '🛍️',
+			'name' => __( 'Product Description', 'wordvane' ),
+			'desc' => __( 'WooCommerce product description — short + long, benefits-first.', 'wordvane' ),
+		],
+	];
+	foreach ( $pro_preview_types as $slug => $type ) {
+		if ( ! isset( $locked_types[ $slug ] ) ) {
+			$locked_types[ $slug ] = $type;
+		}
+	}
+}
+
+$first_type_slug = array_key_first( $enabled_types ) ?? 'how-to';
+
+// Freemius trial state (for limit-reached CTA)
+$fs              = function_exists( 'wordvane_fs' ) ? wordvane_fs() : null;
+$trial_available = $fs
+	&& method_exists( $fs, 'is_trial_utilized' )
+	&& ! $fs->is_trial_utilized()
+	&& method_exists( $fs, 'get_trial_url' );
+$trial_url       = $trial_available ? $fs->get_trial_url() : null;
+$limit_cta_url   = $trial_url ?: $upgrade_url;
+$limit_cta_label = $trial_available ? __( 'Start Free Trial →', 'wordvane' ) : __( 'Get Wordvane Pro →', 'wordvane' );
+
+// Publisher post types
+$publisher_post_types = apply_filters( 'wordvane_publisher_post_types', [ 'post' ] );
+$pro_post_type_labels = [
+	'page'    => __( 'Page', 'wordvane' ),
+	'product' => __( 'WooCommerce Product', 'wordvane' ),
+];
 ?>
 <div class="wrap wv-generator-page">
 	<h1 class="wp-heading-inline"><?php esc_html_e( 'Generate Article', 'wordvane' ); ?></h1>
@@ -129,28 +228,28 @@ if ( $limit_reached ) {
 					}
 					?>
 				</span>
-				<a href="https://topdevs.net/wordvane-pro" target="_blank" rel="noopener noreferrer" class="wv-upgrade-link">
+				<?php if ( ! $is_pro && ! $limit_reached ) : ?>
+				<a href="<?php echo esc_url( $upgrade_url ); ?>" class="wv-upgrade-link">
 					<?php esc_html_e( 'Upgrade for unlimited', 'wordvane' ); ?>
 				</a>
+				<?php endif; ?>
 			</div>
 		</div>
 
-		<?php if ( $limit_reached ) : ?>
+		<?php if ( $limit_reached && ! $is_pro ) : ?>
 		<div class="wv-limit-reached-box">
 			<h3>🔒 <?php esc_html_e( 'You have used all 5 free articles this month.', 'wordvane' ); ?></h3>
 			<p><?php
 				/* translators: %s: reset date */
-				printf( esc_html__( 'Your limit resets on %s.', 'wordvane' ), esc_html( $reset_date ) );
+				printf( esc_html__( 'Your limit resets on %s. Pro removes it entirely.', 'wordvane' ), esc_html( $reset_date ) );
 			?></p>
-			<p><?php esc_html_e( 'Need more? Wordvane Pro gives you:', 'wordvane' ); ?></p>
 			<ul>
 				<li>✓ <?php esc_html_e( 'Unlimited article generation', 'wordvane' ); ?></li>
-				<li>✓ <?php esc_html_e( 'Bulk scheduling (set and forget)', 'wordvane' ); ?></li>
-				<li>✓ <?php esc_html_e( 'All 7 article types', 'wordvane' ); ?></li>
-				<li>✓ <?php esc_html_e( 'Keyword suggester', 'wordvane' ); ?></li>
+				<li>✓ <?php esc_html_e( 'Bulk queue — schedule 50 articles at once', 'wordvane' ); ?></li>
+				<li>✓ <?php esc_html_e( 'All article types including Comparison and Listicle', 'wordvane' ); ?></li>
 			</ul>
-			<a href="https://topdevs.net/wordvane-pro" target="_blank" rel="noopener noreferrer" class="button button-primary wv-upgrade-btn">
-				<?php esc_html_e( 'Get Wordvane Pro →', 'wordvane' ); ?>
+			<a href="<?php echo esc_url( $limit_cta_url ); ?>" class="button wv-cta-btn">
+				<?php echo esc_html( $limit_cta_label ); ?>
 			</a>
 		</div>
 		<?php endif; ?>
@@ -186,21 +285,36 @@ if ( $limit_reached ) {
 							<?php echo wv_tooltip( 'article_type' ); ?>
 						</label>
 						<div class="wv-article-type-cards">
-							<div class="wv-article-type-card selected" data-type="how-to">
-								<div class="wv-type-icon">📖</div>
-								<div class="wv-type-name"><?php esc_html_e( 'How-To Guide', 'wordvane' ); ?></div>
-								<div class="wv-type-desc"><?php esc_html_e( 'Step-by-step tutorial. Best for teaching something your audience wants to learn.', 'wordvane' ); ?></div>
+							<?php foreach ( $enabled_types as $type_slug => $type ) : ?>
+							<div class="wv-article-type-card<?php echo $type_slug === $first_type_slug ? ' selected' : ''; ?>"
+								data-type="<?php echo esc_attr( $type_slug ); ?>">
+								<div class="wv-type-icon"><?php echo esc_html( $type['icon'] ); ?></div>
+								<div class="wv-type-name"><?php echo esc_html( $type['name'] ); ?></div>
+								<div class="wv-type-desc"><?php echo esc_html( $type['desc'] ); ?></div>
 							</div>
-							<div class="wv-article-type-card" data-type="spotlight">
-								<div class="wv-type-icon">⭐</div>
-								<div class="wv-type-name"><?php esc_html_e( 'Spotlight', 'wordvane' ); ?></div>
-								<div class="wv-type-desc"><?php esc_html_e( 'Showcase one product or service in depth. Great for converting browsers to buyers.', 'wordvane' ); ?></div>
+							<?php endforeach; ?>
+							<?php foreach ( $locked_types as $type_slug => $type ) : ?>
+							<div class="wv-article-type-card wv-type-locked"
+								data-type="<?php echo esc_attr( $type_slug ); ?>"
+								data-pro-desc="<?php echo esc_attr( $type['desc'] ); ?>"
+								role="button"
+								tabindex="0"
+								aria-label="<?php echo esc_attr( sprintf( __( '%s — Pro feature. Click to learn more.', 'wordvane' ), $type['name'] ) ); ?>">
+								<span class="wv-pro-badge"><?php esc_html_e( 'Pro', 'wordvane' ); ?></span>
+								<div class="wv-type-icon"><?php echo esc_html( $type['icon'] ); ?></div>
+								<div class="wv-type-name"><?php echo esc_html( $type['name'] ); ?></div>
+								<div class="wv-type-desc"><?php echo esc_html( $type['desc'] ); ?></div>
 							</div>
-							<div class="wv-article-type-card" data-type="faq">
-								<div class="wv-type-icon">❓</div>
-								<div class="wv-type-name"><?php esc_html_e( 'FAQ Post', 'wordvane' ); ?></div>
-								<div class="wv-type-desc"><?php esc_html_e( '5 questions your customers always ask. Great for Google featured snippets.', 'wordvane' ); ?></div>
-							</div>
+							<?php endforeach; ?>
+						</div>
+						<div id="wv-pro-type-popover" class="wv-pro-popover" role="tooltip" aria-live="polite">
+							<button type="button" class="wv-pro-popover-close" aria-label="<?php esc_attr_e( 'Close', 'wordvane' ); ?>">✕</button>
+							<p class="wv-pro-popover-desc"></p>
+							<a href="<?php echo esc_url( $trial_url ?: $upgrade_url ); ?>"
+								id="wv-pro-popover-cta"
+								class="wv-cta-btn wv-cta-btn-sm">
+								<?php echo esc_html( $trial_available ? __( 'Start Free Trial →', 'wordvane' ) : __( 'Get Wordvane Pro →', 'wordvane' ) ); ?>
+							</a>
 						</div>
 					</div>
 
@@ -322,6 +436,29 @@ if ( $limit_reached ) {
 										<?php esc_html_e( 'Publish Now', 'wordvane' ); ?>
 									</label>
 								</div>
+
+								<div class="wv-field-group">
+									<label class="wv-label" for="wv-post-type"><?php esc_html_e( 'Post Type', 'wordvane' ); ?></label>
+									<select id="wv-post-type">
+										<option value="post"><?php esc_html_e( 'Post', 'wordvane' ); ?></option>
+										<?php if ( $is_pro ) : ?>
+											<?php foreach ( $publisher_post_types as $pt ) :
+												if ( 'post' === $pt ) continue;
+												$pt_label = $pro_post_type_labels[ $pt ] ?? ucfirst( $pt );
+											?>
+											<option value="<?php echo esc_attr( $pt ); ?>"><?php echo esc_html( $pt_label ); ?></option>
+											<?php endforeach; ?>
+										<?php else : ?>
+											<?php foreach ( $pro_post_type_labels as $pt => $pt_label ) : ?>
+											<option value="<?php echo esc_attr( $pt ); ?>" disabled>
+												<?php echo esc_html( $pt_label . ' — ' . __( 'Pro', 'wordvane' ) ); ?>
+											</option>
+											<?php endforeach; ?>
+										<?php endif; ?>
+									</select>
+								</div>
+
+								<input type="hidden" id="wv-post-id" value="0">
 							</div>
 						</div>
 

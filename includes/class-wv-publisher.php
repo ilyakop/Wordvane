@@ -41,11 +41,25 @@ class WV_Publisher {
 		$post_content = preg_replace( '/<h1[^>]*>.*?<\/h1>\s*/is', '', $post_content, 1 );
 		$post_content = $this->html_to_blocks( trim( $post_content ) );
 
+		/**
+		 * Filters the post types available for Wordvane-published content.
+		 *
+		 * Free tier allows 'post' only. Pro can add 'page', 'product' (WooCommerce),
+		 * and any registered custom post type.
+		 *
+		 * @since 1.0.0
+		 * @hook  wordvane_publisher_post_types
+		 * @param string[] $types Allowed post type slugs. Default ['post'].
+		 */
+		$allowed_post_types = (array) apply_filters( 'wordvane_publisher_post_types', [ 'post' ] );
+		$post_type_input    = sanitize_text_field( wp_unslash( $_POST['post_type'] ?? 'post' ) );
+		$post_type          = in_array( $post_type_input, $allowed_post_types, true ) ? $post_type_input : 'post';
+
 		$post_data = [
 			'post_title'   => $post_title,
 			'post_content' => $post_content,
 			'post_status'  => $post_status,
-			'post_type'    => 'post',
+			'post_type'    => $post_type,
 		];
 
 		if ( ! empty( $slug ) ) {

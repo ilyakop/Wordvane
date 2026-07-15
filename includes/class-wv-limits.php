@@ -16,7 +16,17 @@ class WV_Limits {
 	}
 
 	public static function get_limit() {
-		return self::FREE_LIMIT;
+		/**
+		 * Filters the monthly article generation limit.
+		 *
+		 * Pro sets this to PHP_INT_MAX (unlimited). Third-party plans can set
+		 * any integer. The generator and usage counter both read this value.
+		 *
+		 * @since 1.0.0
+		 * @hook  wordvane_monthly_limit
+		 * @param int $limit Free-tier cap. Default 5.
+		 */
+		return (int) apply_filters( 'wordvane_monthly_limit', self::FREE_LIMIT );
 	}
 
 	public static function increment_usage() {

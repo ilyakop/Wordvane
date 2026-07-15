@@ -166,6 +166,25 @@ $settings = get_option( 'wv_settings', [] );
 			<?php esc_html_e( "Don't have products set up yet? No problem — you can add these later in Settings.", 'wordvane' ); ?>
 		</p>
 
+		<p class="wv-wizard-plan-note">
+			<?php
+			if ( class_exists( 'WV_Features' ) && WV_Features::is_pro() ) {
+				esc_html_e( "You're on the Pro plan — unlimited articles.", 'wordvane' );
+			} else {
+				$limit = class_exists( 'WV_Limits' ) ? WV_Limits::get_limit() : 5;
+				printf(
+					wp_kses(
+						/* translators: 1: limit, 2: upgrade URL */
+						__( "You're on the <strong>Free plan</strong> — %1\$d articles/month. <a href=\"%2\$s\">View Pro plans →</a>", 'wordvane' ),
+						[ 'strong' => [], 'a' => [ 'href' => [] ] ]
+					),
+					(int) $limit,
+					esc_url( class_exists( 'WV_Features' ) ? WV_Features::get_upgrade_url() : 'https://topdevs.net/wordvane-pro' )
+				);
+			}
+			?>
+		</p>
+
 		<div class="wv-wizard-nav">
 			<button type="button" class="button wv-btn-back" data-back="2">
 				<?php esc_html_e( '← Back', 'wordvane' ); ?>
