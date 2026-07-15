@@ -113,8 +113,7 @@ class WV_Generator {
 		}
 
 		// Give PHP and the WP HTTP layer enough time for a full article response.
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-		@set_time_limit( 180 );
+		set_time_limit( 180 ); // phpcs:ignore WordPress.PHP.IniSet.Risky, Squiz.PHP.DiscouragedFunctions.Discouraged
 		add_filter( 'http_request_args', [ $this, 'extend_ai_timeout' ] );
 		$result = $prompt->generate_text();
 		remove_filter( 'http_request_args', [ $this, 'extend_ai_timeout' ] );
@@ -177,12 +176,12 @@ class WV_Generator {
 		if ( ! empty( $products ) ) {
 			foreach ( $products as $p ) {
 				if ( ! empty( $p['name'] ) ) {
-					$products_text .= '- ' . esc_html( $p['name'] );
+					$products_text .= '- ' . $p['name'];
 					if ( ! empty( $p['url'] ) ) {
-						$products_text .= ' | URL: ' . esc_url( $p['url'] );
+						$products_text .= ' | URL: ' . $p['url'];
 					}
 					if ( ! empty( $p['description'] ) ) {
-						$products_text .= ' | ' . esc_html( $p['description'] );
+						$products_text .= ' | ' . $p['description'];
 					}
 					$products_text .= "\n";
 				}

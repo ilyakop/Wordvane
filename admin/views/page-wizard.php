@@ -1,6 +1,11 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- template vars are local to this included file, not truly global.
+// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- wv_tooltip() is the only unescaped call; it returns pre-escaped HTML.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
+}
+if ( ! current_user_can( 'manage_options' ) ) {
+	wp_die( esc_html__( 'Unauthorized', 'wordvane' ) );
 }
 
 $settings = get_option( 'wv_settings', [] );
@@ -31,15 +36,7 @@ $settings = get_option( 'wv_settings', [] );
 
 		<div class="wv-business-type-cards">
 			<?php
-			$business_types = [
-				'ecommerce'    => [ 'icon' => '🛍️', 'label' => 'eCommerce Store' ],
-				'blog'         => [ 'icon' => '📝', 'label' => 'Blog / Content Site' ],
-				'local'        => [ 'icon' => '🏪', 'label' => 'Local Business' ],
-				'saas'         => [ 'icon' => '💻', 'label' => 'SaaS / Software' ],
-				'professional' => [ 'icon' => '👔', 'label' => 'Professional Services' ],
-				'other'        => [ 'icon' => '📦', 'label' => 'Other' ],
-			];
-			foreach ( $business_types as $key => $bt ) :
+			foreach ( wv_get_business_types() as $key => $bt ) :
 				$selected = ( ( $settings['business_type'] ?? '' ) === $key ) ? ' selected' : '';
 				?>
 				<div class="wv-biz-type-card<?php echo esc_attr( $selected ); ?>" data-value="<?php echo esc_attr( $key ); ?>">
@@ -91,14 +88,8 @@ $settings = get_option( 'wv_settings', [] );
 		<div class="wv-field-group">
 			<label class="wv-label"><?php esc_html_e( 'Your main website goal:', 'wordvane' ); ?></label>
 			<?php
-			$goals = [
-				'sell'      => 'Sell products or services',
-				'leads'     => 'Generate leads and inquiries',
-				'blog'      => 'Grow a blog audience',
-				'awareness' => 'Build brand awareness',
-			];
 			$current_goal = $settings['main_goal'] ?? 'sell';
-			foreach ( $goals as $gval => $glabel ) :
+			foreach ( wv_get_main_goals() as $gval => $glabel ) :
 				?>
 				<label class="wv-radio-label">
 					<input type="radio" name="wv_main_goal" value="<?php echo esc_attr( $gval ); ?>"

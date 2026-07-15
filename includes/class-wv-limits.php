@@ -8,7 +8,7 @@ class WV_Limits {
 	const FREE_LIMIT = 5;
 
 	private static function option_key() {
-		return 'wv_article_count_' . date( 'Y' ) . '_' . date( 'm' );
+		return 'wv_article_count_' . gmdate( 'Y' ) . '_' . gmdate( 'm' );
 	}
 
 	public static function get_usage() {
@@ -40,13 +40,13 @@ class WV_Limits {
 	}
 
 	public static function get_reset_date() {
-		$next_month = mktime( 0, 0, 0, (int) date( 'm' ) + 1, 1, (int) date( 'Y' ) );
-		return date( 'F j, Y', $next_month );
+		$next_month = gmmktime( 0, 0, 0, (int) gmdate( 'm' ) + 1, 1, (int) gmdate( 'Y' ) );
+		return gmdate( 'F j, Y', $next_month );
 	}
 
 	public static function get_days_until_reset() {
-		$next_month = mktime( 0, 0, 0, (int) date( 'm' ) + 1, 1, (int) date( 'Y' ) );
-		$diff       = $next_month - current_time( 'timestamp' );
+		$next_month = gmmktime( 0, 0, 0, (int) gmdate( 'm' ) + 1, 1, (int) gmdate( 'Y' ) );
+		$diff       = $next_month - time();
 		return max( 0, (int) ceil( $diff / DAY_IN_SECONDS ) );
 	}
 
@@ -55,6 +55,10 @@ class WV_Limits {
 	}
 
 	public static function get_percentage() {
-		return min( 100, (int) round( ( self::get_usage() / self::get_limit() ) * 100 ) );
+		$limit = self::get_limit();
+		if ( $limit <= 0 ) {
+			return 0;
+		}
+		return min( 100, (int) round( ( self::get_usage() / $limit ) * 100 ) );
 	}
 }

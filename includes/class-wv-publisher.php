@@ -26,6 +26,7 @@ class WV_Publisher {
 		$meta_description = sanitize_textarea_field( wp_unslash( $_POST['meta_description'] ?? '' ) );
 		$tags             = sanitize_text_field( wp_unslash( $_POST['tags'] ?? '' ) );
 		$target_keyword   = sanitize_text_field( wp_unslash( $_POST['target_keyword'] ?? '' ) );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON container; decoded and used as a structured array below, not output directly.
 		$faq_schema_raw   = wp_unslash( $_POST['faq_schema'] ?? '[]' );
 		$faq_schema       = json_decode( $faq_schema_raw, true );
 		$post_id          = absint( $_POST['post_id'] ?? 0 );
@@ -97,14 +98,15 @@ class WV_Publisher {
 			update_post_meta( $post_id, '_wv_faq_schema', $faq_schema );
 		}
 
-		$seo = new WV_SEO();
-		$seo->apply_seo_meta( $post_id, $meta_title, $meta_description, $target_keyword, is_array( $faq_schema ) ? $faq_schema : [] );
+		WV_SEO::apply_seo_meta( $post_id, $meta_title, $meta_description, $target_keyword, is_array( $faq_schema ) ? $faq_schema : [] );
 
 		wp_send_json_success( [
 			'post_id'   => $post_id,
 			'edit_link' => get_edit_post_link( $post_id, '' ),
 			'view_link' => get_permalink( $post_id ),
-			'message'   => 'publish' === $post_status ? 'Article published!' : 'Article saved as draft.',
+			'message'   => 'publish' === $post_status
+				? __( 'Article published!', 'wordvane' )
+				: __( 'Article saved as draft.', 'wordvane' ),
 		] );
 	}
 

@@ -47,18 +47,13 @@ WordPress 7.0 solved all three with `wp_ai_client_prompt()`. You connect a provi
 3. Go to **Settings → Connectors**, install your AI provider plugin, and connect it
 4. Return to **Wordvane → Generate Article**
 
-### From source / Composer
+### From source
 
 ```bash
-# Clone into your plugins directory
 git clone https://github.com/topdevs/wordvane.git wp-content/plugins/wordvane
-
-# If you're bundling the Freemius SDK via Composer:
-cd wp-content/plugins/wordvane
-composer install
 ```
 
-The Freemius SDK is not committed to this repo. Download it from your [Freemius dashboard](https://dashboard.freemius.com) and place it at `wordvane/freemius/`. Without it, the plugin works fully in free mode — Freemius-dependent features (license activation, Freemius upgrade URL) fall back to static values.
+The Freemius SDK is bundled at `vendor/freemius/` and committed to this repo.
 
 ---
 

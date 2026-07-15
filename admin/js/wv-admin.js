@@ -4,6 +4,21 @@
 (function($) {
     'use strict';
 
+    /* ── Sanitize AI-generated HTML before DOM insertion (Bug-7) */
+    function sanitizeHtml(html) {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        doc.querySelectorAll('script, iframe, object, embed, form').forEach(el => el.remove());
+        doc.querySelectorAll('*').forEach(el => {
+            Array.from(el.attributes).forEach(attr => {
+                if (/^on/i.test(attr.name) ||
+                    (attr.name.toLowerCase() === 'href' && /^javascript:/i.test(attr.value))) {
+                    el.removeAttribute(attr.name);
+                }
+            });
+        });
+        return doc.body.innerHTML;
+    }
+
     /* ── Tooltip System ──────────────────────────────── */
     const Tooltips = {
         flipIfNeeded(wrap) {
@@ -76,6 +91,7 @@
             initCardSelection('.wv-biz-type-card', 'selected', (val) => {
                 this.wizardData.business_type = val;
                 $('#wv-step-1 .wv-btn-next').prop('disabled', false);
+                this.clearStepError(1);
             });
 
             $(document).on('click', '.wv-btn-next', (e) => {
@@ -113,10 +129,24 @@
             this.currentStep = step;
         },
 
+        showStepError(step, message) {
+            const $step = $('#wv-step-' + step);
+            let $err = $step.find('.wv-step-error');
+            if (!$err.length) {
+                $err = $('<p class="wv-step-error" role="alert">');
+                $step.find('.wv-wizard-nav').before($err);
+            }
+            $err.text(message).show();
+        },
+
+        clearStepError(step) {
+            $('#wv-step-' + step + ' .wv-step-error').hide();
+        },
+
         validateStep(step) {
             if (step === 1) {
                 if (!this.wizardData.business_type) {
-                    alert('Please select a business type to continue.');
+                    this.showStepError(1, wvAdmin.strings.business_type_required);
                     return false;
                 }
             }
@@ -131,10 +161,11 @@
                     }
                 });
                 if (!valid) {
-                    alert('Please fill in all required fields.');
+                    this.showStepError(2, wvAdmin.strings.required_fields);
                     return false;
                 }
             }
+            this.clearStepError(step);
             return true;
         },
 
@@ -163,15 +194,15 @@
         addProductRow() {
             const count = $('.wv-product-row').length;
             if (count >= 3) return;
-            const html = `<div class="wv-product-row">
-                <div class="wv-product-fields">
-                    <input type="text" class="regular-text wv-product-name" placeholder="Product / Service Name">
-                    <input type="url" class="regular-text wv-product-url" placeholder="URL on your site">
-                    <input type="text" class="regular-text wv-product-desc" placeholder="e.g. Custom leather wallet, hand-stitched, 5 card slots, $89">
-                </div>
-                <button type="button" class="button wv-remove-product">Remove</button>
-            </div>`;
-            $('#wv-products-repeater').append(html);
+            const $row = $('<div class="wv-product-row">');
+            const $fields = $('<div class="wv-product-fields">');
+            $fields.append(
+                $('<input type="text" class="regular-text wv-product-name">').attr('placeholder', wvAdmin.strings.placeholder_product_name),
+                $('<input type="url" class="regular-text wv-product-url">').attr('placeholder', wvAdmin.strings.placeholder_product_url),
+                $('<input type="text" class="regular-text wv-product-desc">').attr('placeholder', wvAdmin.strings.placeholder_product_desc)
+            );
+            $row.append($fields, $('<button type="button" class="button wv-remove-product">').text(wvAdmin.strings.remove));
+            $('#wv-products-repeater').append($row);
             if ($('.wv-product-row').length >= 3) {
                 $('#wv-add-product').hide();
             }
@@ -194,12 +225,12 @@
                     }
                     window.location.href = redirect;
                 } else {
-                    alert('Could not save settings. Please try again.');
+                    Wizard.showStepError(3, wvAdmin.strings.wizard_error);
                     $('#wv-complete-wizard').prop('disabled', false);
                     $('#wv-wizard-saving').hide();
                 }
             }).fail(function() {
-                alert('Network error. Please try again.');
+                Wizard.showStepError(3, wvAdmin.strings.err_network);
                 $('#wv-complete-wizard').prop('disabled', false);
                 $('#wv-wizard-saving').hide();
             });
@@ -218,15 +249,15 @@
             $(document).on('click', '#wv-add-product-settings', () => {
                 const count = $('#wv-products-repeater-settings .wv-product-row').length;
                 if (count >= 3) return;
-                const html = `<div class="wv-product-row">
-                    <div class="wv-product-fields">
-                        <input type="text" class="regular-text wv-product-name" placeholder="Product / Service Name">
-                        <input type="url" class="regular-text wv-product-url" placeholder="URL on your site">
-                        <input type="text" class="regular-text wv-product-desc" placeholder="One-line description">
-                    </div>
-                    <button type="button" class="button wv-remove-product">Remove</button>
-                </div>`;
-                $('#wv-products-repeater-settings').append(html);
+                const $row = $('<div class="wv-product-row">');
+                const $fields = $('<div class="wv-product-fields">');
+                $fields.append(
+                    $('<input type="text" class="regular-text wv-product-name">').attr('placeholder', wvAdmin.strings.placeholder_product_name),
+                    $('<input type="url" class="regular-text wv-product-url">').attr('placeholder', wvAdmin.strings.placeholder_product_url),
+                    $('<input type="text" class="regular-text wv-product-desc">').attr('placeholder', wvAdmin.strings.placeholder_product_desc_short)
+                );
+                $row.append($fields, $('<button type="button" class="button wv-remove-product">').text(wvAdmin.strings.remove));
+                $('#wv-products-repeater-settings').append($row);
                 if ($('#wv-products-repeater-settings .wv-product-row').length >= 3) {
                     $('#wv-add-product-settings').hide();
                 }
@@ -370,7 +401,7 @@
         init() {
             $(document).on('click', '.wv-dismiss-btn', function() {
                 const key = $(this).data('dismiss-key');
-                const $widget = $(this).closest('#wv-insights-upgrade-widget, #wv-settings-compare-card');
+                const $widget = $(this).closest('#wv-insights-upgrade-widget, #wv-settings-compare-card, #wv-limit-reached-box');
                 $widget.fadeOut(200);
                 $.post(wvAdmin.ajaxurl, {
                     action: 'wv_dismiss_upsell',
@@ -481,7 +512,7 @@
                 }
             }).fail((xhr, status) => {
                 if (status === 'timeout') {
-                    this.showGenerationError('Request timed out. The article may be too long — try again.');
+                    this.showGenerationError(wvAdmin.strings.timeout);
                 } else {
                     this.showGenerationError(wvAdmin.strings.err_network);
                 }
@@ -536,7 +567,8 @@
             this.currentHtml = articleHtml;
             this.currentMeta = meta;
 
-            document.getElementById('wv-streaming-output').innerHTML = articleHtml;
+            // Sanitize before inserting into the DOM (Bug-7)
+            document.getElementById('wv-streaming-output').innerHTML = sanitizeHtml(articleHtml);
 
             // Populate meta fields
             if (meta.meta_title)       { $('#wv-meta-title').val(meta.meta_title).trigger('input'); }
@@ -557,72 +589,50 @@
             const firstPText  = firstPMatch ? firstPMatch[1].toLowerCase() : '';
             const wordCount   = html.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(w => w.length > 0).length;
 
-            const checks = [
-                {
-                    pass: lowerKw && titleText.includes(lowerKw),
-                    label: 'Keyword found in title',
-                    tip: 'The post title should contain your target keyword.'
-                },
-                {
-                    pass: lowerKw && firstPText.includes(lowerKw),
-                    label: 'Keyword in first paragraph',
-                    tip: 'Google checks the first paragraph for your main keyword.'
-                },
-                {
-                    pass: meta.meta_title && meta.meta_title.length <= 60,
-                    label: 'Meta title under 60 chars',
-                    tip: 'Titles longer than 60 characters get cut off in search results.'
-                },
-                {
-                    pass: !!meta.meta_description,
-                    label: 'Meta description filled in',
-                    tip: 'A compelling meta description improves click-through rates.'
-                },
-                {
-                    pass: wordCount > 1000,
-                    label: 'Article over 1000 words',
-                    tip: 'Longer, detailed articles tend to rank better for competitive keywords.'
-                },
-                {
-                    pass: lowerHtml.includes('<h2') && (lowerHtml.includes('faq') || lowerHtml.includes('question') || lowerHtml.includes('frequently')),
-                    label: 'FAQ section present',
-                    tip: 'FAQ sections help Google show your content as a featured snippet.'
-                }
+            const checks = wvAdmin.strings.seo_checks;
+            const checkPasses = [
+                lowerKw && titleText.includes(lowerKw),
+                lowerKw && firstPText.includes(lowerKw),
+                meta.meta_title && meta.meta_title.length <= 60,
+                !!meta.meta_description,
+                wordCount > 1000,
+                lowerHtml.includes('<h2') && (lowerHtml.includes('faq') || lowerHtml.includes('question') || lowerHtml.includes('frequently'))
             ];
 
             let passCount = 0;
-            let html_out = '';
-            checks.forEach(function(c) {
-                if (c.pass) passCount++;
-                const icon = c.pass ? '✅' : '⚠️';
-                html_out += `<div class="wv-seo-check-item">
-                    <span class="wv-seo-check-icon">${icon}</span>
-                    <span>${c.label}
-                        <span class="wv-tooltip-wrap">
-                            <span class="wv-tooltip-icon" tabindex="0">?</span>
-                            <span class="wv-tooltip-content" role="tooltip"><p>${c.tip}</p></span>
-                        </span>
-                    </span>
-                </div>`;
+            const $list = $('#wv-seo-checklist').empty();
+
+            checkPasses.forEach(function(pass, i) {
+                if (pass) passCount++;
+                const str = checks[i] || { label: '', tip: '' };
+                const $item = $('<div class="wv-seo-check-item">');
+                const $icon = $('<span class="wv-seo-check-icon">').text(pass ? '✅' : '⚠️');
+                const $label = $('<span>').text(str.label);
+                const $tipWrap = $('<span class="wv-tooltip-wrap">');
+                const $tipIcon = $('<span class="wv-tooltip-icon" tabindex="0">').text('?');
+                const $tipContent = $('<span class="wv-tooltip-content" role="tooltip">');
+                $('<p>').text(str.tip).appendTo($tipContent);
+                $tipWrap.append($tipIcon, $tipContent);
+                $label.append($tipWrap);
+                $item.append($icon, $label);
+                $list.append($item);
             });
 
-            html_out += `<div class="wv-seo-check-item">
-                <span class="wv-seo-check-icon">💡</span>
-                <span>Consider adding internal links to other posts manually</span>
-            </div>`;
-
-            $('#wv-seo-checklist').html(html_out);
+            $('<div class="wv-seo-check-item">').append(
+                $('<span class="wv-seo-check-icon">').text('💡'),
+                $('<span>').text(wvAdmin.strings.internal_links_tip)
+            ).appendTo($list);
 
             let grade, gradeClass, gradeTip;
             if (passCount >= 5) {
                 grade = 'A'; gradeClass = 'grade-a';
-                gradeTip = 'Great — this article is well optimized. Publish it.';
+                gradeTip = wvAdmin.strings.grade_a;
             } else if (passCount >= 3) {
                 grade = 'B'; gradeClass = 'grade-b';
-                gradeTip = 'Good start. Fill in any missing items before publishing.';
+                gradeTip = wvAdmin.strings.grade_b;
             } else {
                 grade = 'C'; gradeClass = 'grade-c';
-                gradeTip = 'Needs work. Review the warnings before publishing.';
+                gradeTip = wvAdmin.strings.grade_c;
             }
 
             $('#wv-grade-badge')
@@ -633,7 +643,7 @@
 
         showGenerationError(message) {
             $('#wv-generating-status').hide();
-            $('#wv-streaming-output').html('<p style="color:#cc1818;">' + message + '</p>');
+            $('#wv-streaming-output').empty().append($('<p style="color:#cc1818;">').text(message));
             this.isGenerating = false;
             $('#wv-generate-btn, #wv-regenerate').prop('disabled', false);
         },
@@ -671,16 +681,26 @@
                 if (res.success) {
                     const d = res.data;
                     $('#wv-post-id').val(d.post_id);
+                    // Safe DOM construction — no HTML string concatenation (Bug-8)
+                    const $msg = $('<span>').text(d.message + ' ');
+                    const $editLink = $('<a>').attr({ href: d.edit_link, target: '_blank' })
+                        .text(wvAdmin.strings.edit_post);
+                    const parts = [$msg, $editLink];
+                    if (d.view_link) {
+                        parts.push($('<span>').text(' | '));
+                        parts.push($('<a>').attr({ href: d.view_link, target: '_blank' })
+                            .text(wvAdmin.strings.view_post));
+                    }
                     resultEl.show()
                         .removeClass('wv-result-error')
                         .addClass('wv-result-success')
-                        .html(d.message + ' <a href="' + d.edit_link + '" target="_blank">Edit post ↗</a>' +
-                            (d.view_link ? ' | <a href="' + d.view_link + '" target="_blank">View post ↗</a>' : ''));
+                        .empty()
+                        .append(parts);
                 } else {
                     resultEl.show()
                         .removeClass('wv-result-success')
                         .addClass('wv-result-error')
-                        .text((res.data && res.data.message) || 'Could not publish. Please try again.');
+                        .text((res.data && res.data.message) || wvAdmin.strings.publish_error);
                 }
             }).fail(function() {
                 $('#wv-publish-saving').hide();
@@ -688,7 +708,7 @@
                 resultEl.show()
                     .removeClass('wv-result-success')
                     .addClass('wv-result-error')
-                    .text('Network error. Please try again.');
+                    .text(wvAdmin.strings.err_network);
             });
         },
 

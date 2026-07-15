@@ -1,4 +1,6 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- template vars are local to this included file, not truly global.
+// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- wv_tooltip() is the only unescaped call; it returns pre-escaped HTML.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -15,7 +17,8 @@ $limit_reached    = WV_Limits::is_limit_reached();
 $percentage       = WV_Limits::get_percentage();
 $days_until_reset = WV_Limits::get_days_until_reset();
 $reset_date       = WV_Limits::get_reset_date();
-$show_welcome     = isset( $_GET['wv_welcome'] ) && '1' === $_GET['wv_welcome'];
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only nav flag set by our own redirect, not a form submission.
+$show_welcome     = isset( $_GET['wv_welcome'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['wv_welcome'] ) );
 $categories       = get_categories( [ 'hide_empty' => false ] );
 $is_pro           = WV_Features::is_pro();
 $upgrade_url      = WV_Features::get_upgrade_url();
@@ -111,6 +114,10 @@ if ( $is_pro ) {
 }
 
 $first_type_slug = array_key_first( $enabled_types ) ?? 'how-to';
+
+// Month-scoped dismiss key for the limit-reached box (resets automatically each month)
+$limit_month_key  = gmdate( 'Y' ) . '_' . (int) gmdate( 'm' );
+$limit_dismissed  = (bool) get_user_meta( get_current_user_id(), 'wv_dismissed_limit_' . $limit_month_key, true );
 
 // Freemius trial state (for limit-reached CTA)
 $fs              = function_exists( 'wordvane_fs' ) ? wordvane_fs() : null;
@@ -208,12 +215,20 @@ $pro_post_type_labels = [
 		<div class="wv-usage-counter">
 			<div class="wv-usage-left">
 				<strong>📊 <?php
+				if ( $is_pro ) {
+					/* translators: %d: number of articles generated this month */
+					printf( esc_html__( 'Articles this month: %d of unlimited used', 'wordvane' ), absint( $usage ) );
+				} else {
 					/* translators: 1: used count, 2: limit */
-					printf( esc_html__( 'Articles this month: %1$d of %2$d used', 'wordvane' ), $usage, $limit );
+					printf( esc_html__( 'Articles this month: %1$d of %2$d used', 'wordvane' ), absint( $usage ), absint( $limit ) );
+				}
 				?></strong>
+				<?php if ( ! $is_pro ) : ?>
 				<?php echo wv_tooltip( 'article_limit' ); ?>
+				<?php endif; ?>
 			</div>
 			<div class="wv-usage-right">
+				<?php if ( ! $is_pro ) : ?>
 				<div class="wv-progress-bar-wrap">
 					<div class="wv-progress-bar <?php echo esc_attr( $bar_color ); ?>" style="width:<?php echo esc_attr( $percentage ); ?>%"></div>
 				</div>
@@ -223,11 +238,12 @@ $pro_post_type_labels = [
 						/* translators: %s: reset date */
 						printf( esc_html__( 'Resets on %s', 'wordvane' ), esc_html( $reset_date ) );
 					} else {
-						/* translators: %d: number of days */
-						printf( esc_html__( 'Resets in %d days', 'wordvane' ), $days_until_reset );
+						/* translators: %d: number of days until monthly limit resets */
+						printf( esc_html__( 'Resets in %d days', 'wordvane' ), absint( $days_until_reset ) );
 					}
 					?>
 				</span>
+				<?php endif; ?>
 				<?php if ( ! $is_pro && ! $limit_reached ) : ?>
 				<a href="<?php echo esc_url( $upgrade_url ); ?>" class="wv-upgrade-link">
 					<?php esc_html_e( 'Upgrade for unlimited', 'wordvane' ); ?>
@@ -236,8 +252,12 @@ $pro_post_type_labels = [
 			</div>
 		</div>
 
-		<?php if ( $limit_reached && ! $is_pro ) : ?>
-		<div class="wv-limit-reached-box">
+		<?php if ( $limit_reached && ! $is_pro && ! $limit_dismissed ) : ?>
+		<div class="wv-limit-reached-box" id="wv-limit-reached-box">
+			<button type="button"
+				class="wv-dismiss-btn"
+				data-dismiss-key="limit_<?php echo esc_attr( $limit_month_key ); ?>"
+				aria-label="<?php esc_attr_e( 'Dismiss', 'wordvane' ); ?>">✕</button>
 			<h3>🔒 <?php esc_html_e( 'You have used all 5 free articles this month.', 'wordvane' ); ?></h3>
 			<p><?php
 				/* translators: %s: reset date */
@@ -299,7 +319,7 @@ $pro_post_type_labels = [
 								data-pro-desc="<?php echo esc_attr( $type['desc'] ); ?>"
 								role="button"
 								tabindex="0"
-								aria-label="<?php echo esc_attr( sprintf( __( '%s — Pro feature. Click to learn more.', 'wordvane' ), $type['name'] ) ); ?>">
+								aria-label="<?php /* translators: %s: article type name */ echo esc_attr( sprintf( __( '%s — Pro feature. Click to learn more.', 'wordvane' ), $type['name'] ) ); ?>">
 								<span class="wv-pro-badge"><?php esc_html_e( 'Pro', 'wordvane' ); ?></span>
 								<div class="wv-type-icon"><?php echo esc_html( $type['icon'] ); ?></div>
 								<div class="wv-type-name"><?php echo esc_html( $type['name'] ); ?></div>

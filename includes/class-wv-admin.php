@@ -130,13 +130,37 @@ class WV_Admin {
 			'upgradeUrl'     => WV_Features::get_upgrade_url(),
 			'trialUrl'       => $trial_url,
 			'strings'        => [
-				'generating'    => __( 'Generating your article...', 'wordvane' ),
-				'limit_reached' => __( 'Monthly limit reached.', 'wordvane' ),
-				'no_ai_provider' => __( 'No AI provider is active. Go to Settings → Connectors to install one.', 'wordvane' ),
-				'err_generic'   => __( 'Generation failed: ', 'wordvane' ),
-				'err_network'   => __( 'Network error. Please try again.', 'wordvane' ),
-				'saved'         => __( 'Settings saved!', 'wordvane' ),
-				'save_error'    => __( 'Could not save settings. Please try again.', 'wordvane' ),
+				'generating'             => __( 'Generating your article...', 'wordvane' ),
+				'limit_reached'          => __( 'Monthly limit reached.', 'wordvane' ),
+				'no_ai_provider'         => __( 'No AI provider is active. Go to Settings → Connectors to install one.', 'wordvane' ),
+				'err_generic'            => __( 'Generation failed: ', 'wordvane' ),
+				'err_network'            => __( 'Network error. Please try again.', 'wordvane' ),
+				'timeout'                => __( 'Request timed out. The article may be too long — try again.', 'wordvane' ),
+				'saved'                  => __( 'Settings saved!', 'wordvane' ),
+				'save_error'             => __( 'Could not save settings. Please try again.', 'wordvane' ),
+				'business_type_required' => __( 'Please select a business type to continue.', 'wordvane' ),
+				'required_fields'        => __( 'Please fill in all required fields.', 'wordvane' ),
+				'wizard_error'           => __( 'Could not save settings. Please try again.', 'wordvane' ),
+				'publish_error'          => __( 'Could not publish. Please try again.', 'wordvane' ),
+				'edit_post'              => __( 'Edit post ↗', 'wordvane' ),
+				'view_post'              => __( 'View post ↗', 'wordvane' ),
+				'internal_links_tip'     => __( 'Consider adding internal links to other posts manually', 'wordvane' ),
+				'remove'                 => __( 'Remove', 'wordvane' ),
+				'placeholder_product_name'     => __( 'Product / Service Name', 'wordvane' ),
+				'placeholder_product_url'      => __( 'URL on your site', 'wordvane' ),
+				'placeholder_product_desc'     => __( 'e.g. Custom leather wallet, hand-stitched, 5 card slots, $89', 'wordvane' ),
+				'placeholder_product_desc_short' => __( 'One-line description', 'wordvane' ),
+				'grade_a'   => __( 'Great — this article is well optimized. Publish it.', 'wordvane' ),
+				'grade_b'   => __( 'Good start. Fill in any missing items before publishing.', 'wordvane' ),
+				'grade_c'   => __( 'Needs work. Review the warnings before publishing.', 'wordvane' ),
+				'seo_checks' => [
+					[ 'label' => __( 'Keyword found in title', 'wordvane' ),        'tip' => __( 'The post title should contain your target keyword.', 'wordvane' ) ],
+					[ 'label' => __( 'Keyword in first paragraph', 'wordvane' ),    'tip' => __( 'Google checks the first paragraph for your main keyword.', 'wordvane' ) ],
+					[ 'label' => __( 'Meta title under 60 chars', 'wordvane' ),     'tip' => __( 'Titles longer than 60 characters get cut off in search results.', 'wordvane' ) ],
+					[ 'label' => __( 'Meta description filled in', 'wordvane' ),    'tip' => __( 'A compelling meta description improves click-through rates.', 'wordvane' ) ],
+					[ 'label' => __( 'Article over 1000 words', 'wordvane' ),       'tip' => __( 'Longer, detailed articles tend to rank better for competitive keywords.', 'wordvane' ) ],
+					[ 'label' => __( 'FAQ section present', 'wordvane' ),           'tip' => __( 'FAQ sections help Google show your content as a featured snippet.', 'wordvane' ) ],
+				],
 			],
 		] );
 	}
@@ -165,6 +189,7 @@ class WV_Admin {
 			return;
 		}
 
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON container; individual fields sanitized inside sanitize_settings().
 		$raw  = wp_unslash( $_POST['settings'] ?? '' );
 		$data = json_decode( $raw, true );
 
@@ -197,8 +222,7 @@ class WV_Admin {
 		}
 
 		$existing = get_option( 'wv_settings', [] );
-		$data     = wp_unslash( $_POST );
-		$settings = $this->sanitize_settings( $data );
+		$settings = $this->sanitize_settings( $_POST );
 
 		update_option( 'wv_settings', array_merge( $existing, $settings ) );
 		wp_send_json_success( [ 'message' => 'saved' ] );
@@ -229,7 +253,7 @@ class WV_Admin {
 			return;
 		}
 
-		$checklist = array_map( 'absint', (array) ( $_POST['checklist'] ?? [] ) );
+		$checklist = array_map( 'absint', (array) wp_unslash( $_POST['checklist'] ?? [] ) );
 		update_user_meta( get_current_user_id(), 'wv_checklist', $checklist );
 		wp_send_json_success();
 	}
@@ -261,7 +285,10 @@ class WV_Admin {
 		$allowed = [ 'settings_comparison', 'insights_upgrade' ];
 		$key     = sanitize_key( wp_unslash( $_POST['key'] ?? '' ) );
 
-		if ( ! in_array( $key, $allowed, true ) ) {
+		// Also allow month-scoped limit keys (e.g. limit_2026_7)
+		$is_valid_limit_key = (bool) preg_match( '/^limit_\d{4}_\d{1,2}$/', $key );
+
+		if ( ! $is_valid_limit_key && ! in_array( $key, $allowed, true ) ) {
 			wp_send_json_error( [ 'message' => 'Invalid key.' ] );
 		}
 

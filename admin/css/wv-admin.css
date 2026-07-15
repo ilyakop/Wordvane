@@ -294,7 +294,8 @@
     margin-right: 6px;
 }
 
-.wv-field-error {
+.wv-field-error,
+.wv-step-error {
     color: #cc1818;
     font-size: 13px;
     margin-top: 4px;
@@ -331,241 +332,6 @@
 
 .wv-product-fields input {
     width: 100%;
-}
-
-/* ─── Info Box ────────────────────────────────────────── */
-.wv-info-box {
-    background: #e7f3ff;
-    border-left: 4px solid #2271b1;
-    padding: 14px 16px;
-    border-radius: 0 6px 6px 0;
-    margin-bottom: 24px;
-    font-size: 14px;
-    color: #1d2327;
-}
-
-.wv-info-box p {
-    margin: 6px 0;
-}
-
-/* ─── Cost Cards ──────────────────────────────────────── */
-.wv-cost-cards {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-bottom: 16px;
-}
-
-.wv-cost-card {
-    border: 1px solid #dcdcde;
-    border-radius: 8px;
-    padding: 16px;
-    text-align: center;
-    background: #fff;
-}
-
-.wv-cost-icon {
-    font-size: 24px;
-    margin-bottom: 8px;
-}
-
-.wv-cost-title {
-    font-weight: 600;
-    color: #1d2327;
-    margin-bottom: 8px;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-
-.wv-cost-value {
-    font-size: 22px;
-    font-weight: 700;
-    color: #2271b1;
-    margin-bottom: 6px;
-}
-
-.wv-cost-note {
-    font-size: 12px;
-    color: #646970;
-    margin: 4px 0 !important;
-}
-
-.wv-cost-footer {
-    text-align: center;
-    font-size: 13px;
-    color: #646970;
-    margin-bottom: 24px;
-}
-
-/* ─── Steps List ──────────────────────────────────────── */
-.wv-steps-list {
-    list-style: none;
-    padding: 0;
-    counter-reset: step-counter;
-    margin-bottom: 24px;
-}
-
-.wv-steps-list li {
-    padding: 12px 12px 12px 52px;
-    margin-bottom: 8px;
-    background: #f8f9fa;
-    border-radius: 6px;
-    position: relative;
-    font-size: 14px;
-}
-
-.wv-steps-list li::before {
-    counter-increment: step-counter;
-    content: counter(step-counter);
-    position: absolute;
-    left: 14px;
-    top: 14px;
-    width: 24px;
-    height: 24px;
-    background: #2271b1;
-    color: #fff;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 12px;
-}
-
-/* ─── API Key Input ───────────────────────────────────── */
-.wv-api-key-wrap {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.wv-api-key-wrap input {
-    flex: 1;
-}
-
-.wv-api-result {
-    padding: 12px 14px;
-    border-radius: 4px;
-    font-size: 14px;
-    margin: 12px 0;
-}
-
-.wv-api-result.wv-result-success {
-    background: #edfaed;
-    border: 1px solid #5bab5b;
-    color: #1a7a1a;
-}
-
-.wv-api-result.wv-result-error {
-    background: #fef0f0;
-    border: 1px solid #cc1818;
-    color: #7a1a1a;
-}
-
-.wv-api-result.wv-result-warn {
-    background: #fffbec;
-    border: 1px solid #d4a018;
-    color: #6b4c00;
-}
-
-/* ─── Model Cards ─────────────────────────────────────── */
-.wv-model-cards {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-bottom: 16px;
-}
-
-.wv-model-card {
-    border: 2px solid #dcdcde;
-    border-radius: 8px;
-    padding: 16px;
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
-    position: relative;
-}
-
-.wv-model-card:hover {
-    border-color: #2271b1;
-}
-
-.wv-model-card.selected {
-    border-color: #2271b1;
-    background: #f0f6fc;
-}
-
-.wv-model-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px;
-    background: #f0f6fc;
-    color: #2271b1;
-    border: 1px solid #c5daef;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.wv-model-name {
-    font-weight: 700;
-    color: #1d2327;
-    margin-bottom: 10px;
-    font-size: 14px;
-}
-
-.wv-model-bars {
-    margin-bottom: 10px;
-}
-
-.wv-bar-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 5px;
-}
-
-.wv-bar-label {
-    font-size: 11px;
-    color: #646970;
-    width: 46px;
-    flex-shrink: 0;
-}
-
-.wv-quality-bar {
-    flex: 1;
-    height: 8px;
-    background: #e2e4e7;
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.wv-quality-fill {
-    height: 100%;
-    background: #2271b1;
-    border-radius: 4px;
-    transition: width 0.3s;
-}
-
-.wv-model-cost {
-    font-size: 12px;
-    color: #646970;
-    margin-bottom: 6px;
-}
-
-.wv-model-best {
-    font-size: 12px;
-    color: #1d2327;
-    margin-bottom: 10px;
-}
-
-.wv-model-recommendation {
-    background: #fffbec;
-    border: 1px solid #d4a018;
-    border-radius: 6px;
-    padding: 14px;
-    font-size: 13px;
-    margin-top: 8px;
 }
 
 /* ─── Usage Counter ───────────────────────────────────── */
@@ -1036,6 +802,24 @@
     margin: 12px 0;
 }
 
+.wv-settings-feedback.wv-result-success {
+    background: #edfaed;
+    border: 1px solid #5bab5b;
+    color: #1a7a1a;
+}
+
+.wv-settings-feedback.wv-result-error {
+    background: #fef0f0;
+    border: 1px solid #cc1818;
+    color: #7a1a1a;
+}
+
+.wv-settings-feedback.wv-result-warn {
+    background: #fffbec;
+    border: 1px solid #d4a018;
+    color: #6b4c00;
+}
+
 /* ─── Insights Page ───────────────────────────────────── */
 .wv-insights-section {
     background: #fff;
@@ -1260,42 +1044,6 @@
     gap: 8px;
     cursor: pointer;
     flex: 1;
-}
-
-/* ─── Upgrade Box ─────────────────────────────────────── */
-.wv-upgrade-box {
-    background: linear-gradient(135deg, #f5f0ff 0%, #ede7ff 100%);
-    border: 1px solid #c8b8f0;
-    border-radius: 8px;
-    padding: 24px;
-}
-
-.wv-upgrade-box h2 {
-    margin-top: 0;
-    border: none;
-    padding: 0;
-    margin-bottom: 12px;
-}
-
-.wv-upgrade-box ul {
-    list-style: none;
-    padding: 0;
-    margin: 12px 0 20px;
-}
-
-.wv-upgrade-box ul li {
-    padding: 4px 0;
-    font-size: 14px;
-}
-
-.wv-upgrade-btn {
-    background: #6741d9 !important;
-    border-color: #5a32c9 !important;
-    color: #fff !important;
-}
-
-.wv-upgrade-btn:hover {
-    background: #5a32c9 !important;
 }
 
 /* ─── Spinner ─────────────────────────────────────────── */

@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- all functions are prefixed wv_ which is this plugin's registered prefix.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }

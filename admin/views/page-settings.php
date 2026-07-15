@@ -1,4 +1,6 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- template vars are local to this included file, not truly global.
+// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- wv_tooltip() is the only unescaped call; it returns pre-escaped HTML.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -29,6 +31,7 @@ $tabs = apply_filters( 'wordvane_settings_tabs', [
 ] );
 
 $valid_tabs = array_keys( $tabs );
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab selector, not a form submission.
 $active_tab = sanitize_text_field( wp_unslash( $_GET['tab'] ?? $valid_tabs[0] ) );
 $active_tab = in_array( $active_tab, $valid_tabs, true ) ? $active_tab : $valid_tabs[0];
 
@@ -70,7 +73,7 @@ $allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 				printf(
 					/* translators: %d: max allowed profiles */
 					esc_html__( 'Up to %d profiles', 'wordvane' ),
-					$allowed_profiles
+					absint( $allowed_profiles )
 				);
 				?>
 			</span>
@@ -78,15 +81,7 @@ $allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 		</h2>
 		<div class="wv-business-type-cards">
 			<?php
-			$business_types = [
-				'ecommerce'    => [ 'icon' => '🛍️', 'label' => 'eCommerce Store' ],
-				'blog'         => [ 'icon' => '📝', 'label' => 'Blog / Content Site' ],
-				'local'        => [ 'icon' => '🏪', 'label' => 'Local Business' ],
-				'saas'         => [ 'icon' => '💻', 'label' => 'SaaS / Software' ],
-				'professional' => [ 'icon' => '👔', 'label' => 'Professional Services' ],
-				'other'        => [ 'icon' => '📦', 'label' => 'Other' ],
-			];
-			foreach ( $business_types as $key => $bt ) :
+			foreach ( wv_get_business_types() as $key => $bt ) :
 				$selected = ( ( $settings['business_type'] ?? '' ) === $key ) ? ' selected' : '';
 				?>
 				<div class="wv-biz-type-card<?php echo esc_attr( $selected ); ?>" data-value="<?php echo esc_attr( $key ); ?>">
@@ -133,14 +128,8 @@ $allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 				<th><label><?php esc_html_e( 'Main website goal:', 'wordvane' ); ?></label></th>
 				<td>
 					<?php
-					$goals        = [
-						'sell'      => 'Sell products or services',
-						'leads'     => 'Generate leads and inquiries',
-						'blog'      => 'Grow a blog audience',
-						'awareness' => 'Build brand awareness',
-					];
 					$current_goal = $settings['main_goal'] ?? 'sell';
-					foreach ( $goals as $gval => $glabel ) :
+					foreach ( wv_get_main_goals() as $gval => $glabel ) :
 						?>
 						<label class="wv-radio-label">
 							<input type="radio" name="wv_s_main_goal" value="<?php echo esc_attr( $gval ); ?>"
@@ -244,14 +233,8 @@ $allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 				</th>
 				<td>
 					<?php
-					$seo_plugins = [
-						'none'     => 'None',
-						'yoast'    => 'Yoast SEO',
-						'rankmath' => 'Rank Math',
-						'aioseo'   => 'All in One SEO',
-					];
 					$current_seo = $settings['seo_plugin'] ?? 'none';
-					foreach ( $seo_plugins as $spval => $splabel ) :
+					foreach ( wv_get_seo_plugin_options() as $spval => $splabel ) :
 						?>
 						<label class="wv-radio-label">
 							<input type="radio" name="wv_s_seo_plugin" value="<?php echo esc_attr( $spval ); ?>"

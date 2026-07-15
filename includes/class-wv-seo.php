@@ -21,10 +21,10 @@ class WV_SEO {
 		$meta_description = get_post_meta( $post_id, '_wv_meta_description', true );
 		$target_keyword   = get_post_meta( $post_id, '_wv_target_keyword', true );
 		$faq_schema       = get_post_meta( $post_id, '_wv_faq_schema', true );
-		$this->apply_seo_meta( $post_id, $meta_title, $meta_description, $target_keyword, is_array( $faq_schema ) ? $faq_schema : [] );
+		self::apply_seo_meta( $post_id, $meta_title, $meta_description, $target_keyword, is_array( $faq_schema ) ? $faq_schema : [] );
 	}
 
-	public function apply_seo_meta( $post_id, $meta_title, $meta_description, $target_keyword, $faq_schema = [] ) {
+	public static function apply_seo_meta( $post_id, $meta_title, $meta_description, $target_keyword, $faq_schema = [] ) {
 		$settings   = get_option( 'wv_settings', [] );
 		$seo_plugin = $settings['seo_plugin'] ?? 'none';
 

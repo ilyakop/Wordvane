@@ -100,7 +100,7 @@ Wordvane Pro is a separate paid add-on distributed via Freemius.
 
 * **Unlimited article generation** — no monthly cap
 * **Bulk Queue** — paste a keyword list, queue dozens of articles, process automatically via WP-Cron in the background
-***Content Refresh Mode** — feed an existing post URL, get an AI-proposed update with a diff view before publishing
+* **Content Refresh Mode** — feed an existing post URL, get an AI-proposed update with a diff view before publishing
 * **Internal Linking Automation** — indexes your existing content and suggests/inserts contextual links into new articles
 * **Multiple Business DNA profiles** — one per client site, ideal for agencies managing multiple WordPress installations
 * **Additional article types** — Comparison, Listicle, Category Page, WooCommerce Product Description

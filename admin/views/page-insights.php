@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- template vars are local to this included file, not truly global.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -8,9 +9,9 @@ if ( ! current_user_can( 'edit_posts' ) ) {
 
 $total_generated = 0;
 for ( $m = 1; $m <= 12; $m++ ) {
-	$total_generated += (int) get_option( 'wv_article_count_' . date( 'Y' ) . '_' . sprintf( '%02d', $m ), 0 );
+	$total_generated += (int) get_option( 'wv_article_count_' . gmdate( 'Y' ) . '_' . gmdate( 'm', gmmktime( 0, 0, 0, $m, 1 ) ), 0 );
 }
-$total_generated += (int) get_option( 'wv_article_count_' . ( (int) date( 'Y' ) - 1 ) . '_12', 0 );
+$total_generated += (int) get_option( 'wv_article_count_' . ( (int) gmdate( 'Y' ) - 1 ) . '_12', 0 );
 
 $query_30 = new WP_Query( [
 	'post_type'      => 'post',
@@ -26,7 +27,7 @@ $avg_per_week      = round( $published_30_days / 4, 1 );
 $query_month = new WP_Query( [
 	'post_type'      => 'post',
 	'post_status'    => 'publish',
-	'date_query'     => [ [ 'after' => date( 'Y-m-01' ) ] ],
+	'date_query'     => [ [ 'year' => (int) gmdate( 'Y' ), 'monthnum' => (int) gmdate( 'm' ) ] ],
 	'posts_per_page' => -1,
 	'fields'         => 'ids',
 	'meta_query'     => [ [ 'key' => '_wv_meta_title', 'compare' => 'EXISTS' ] ],
@@ -210,7 +211,7 @@ $upgrade_url        = WV_Features::get_upgrade_url();
 			<span>
 				<?php
 				/* translators: 1: completed, 2: total */
-				printf( esc_html__( '%1$d of %2$d quick wins complete 🎯', 'wordvane' ), $checklist_complete, count( $checklist_items ) );
+				printf( esc_html__( '%1$d of %2$d quick wins complete 🎯', 'wordvane' ), absint( $checklist_complete ), absint( count( $checklist_items ) ) );
 				?>
 			</span>
 		</div>

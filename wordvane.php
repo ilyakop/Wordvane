@@ -13,6 +13,7 @@
  * Requires PHP: 7.4
  */
 
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- all functions are prefixed wv_ which is this plugin's registered prefix.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -32,9 +33,9 @@ require_once WV_PLUGIN_DIR . 'includes/wv-pro-features-list.php';
 
 register_activation_hook( __FILE__, 'wv_activate' );
 function wv_activate() {
-	$month_key = 'wv_article_count_' . date( 'Y' ) . '_' . date( 'm' );
+	$month_key = 'wv_article_count_' . gmdate( 'Y' ) . '_' . gmdate( 'm' );
 	if ( ! get_option( 'wv_activated' ) ) {
-		update_option( 'wv_activated', current_time( 'timestamp' ) );
+		update_option( 'wv_activated', '1' );
 		update_option( 'wv_wizard_complete', false );
 		add_option( $month_key, 0 );
 		set_transient( 'wv_activation_redirect', true, 30 );
@@ -44,11 +45,6 @@ function wv_activate() {
 register_deactivation_hook( __FILE__, 'wv_deactivate' );
 function wv_deactivate() {
 	wp_clear_scheduled_hook( 'wv_monthly_reset' );
-}
-
-add_action( 'plugins_loaded', 'wv_load_textdomain' );
-function wv_load_textdomain() {
-	load_plugin_textdomain( 'wordvane', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 }
 
 add_action( 'admin_init', 'wv_activation_redirect' );
@@ -178,7 +174,7 @@ function wv_render_insights_upgrade_widget() {
 
 	$total_generated = 0;
 	for ( $m = 1; $m <= 12; $m++ ) {
-		$total_generated += (int) get_option( 'wv_article_count_' . gmdate( 'Y' ) . '_' . sprintf( '%02d', $m ), 0 );
+		$total_generated += (int) get_option( 'wv_article_count_' . gmdate( 'Y' ) . '_' . gmdate( 'm', gmmktime( 0, 0, 0, $m, 1 ) ), 0 );
 	}
 
 	$fs              = function_exists( 'wordvane_fs' ) ? wordvane_fs() : null;

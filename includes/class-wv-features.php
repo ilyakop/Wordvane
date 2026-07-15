@@ -17,9 +17,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WV_Features {
 
-	/** Free-tier monthly article cap. */
-	const FREE_ARTICLE_LIMIT = 5;
-
 	/** Free-tier Business DNA profile count. */
 	const FREE_DNA_PROFILES = 1;
 
