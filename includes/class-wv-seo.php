@@ -3,7 +3,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class WV_SEO {
+class Wordvane_SEO {
 
 	public function __construct() {
 		add_action( 'save_post', [ $this, 'on_save_post' ], 20, 2 );

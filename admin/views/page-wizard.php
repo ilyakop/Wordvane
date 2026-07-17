@@ -1,6 +1,6 @@
 <?php
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- template vars are local to this included file, not truly global.
-// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- wv_tooltip() is the only unescaped call; it returns pre-escaped HTML.
+// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- wordvane_tooltip() is the only unescaped call; it returns pre-escaped HTML.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -36,7 +36,7 @@ $settings = get_option( 'wv_settings', [] );
 
 		<div class="wv-business-type-cards">
 			<?php
-			foreach ( wv_get_business_types() as $key => $bt ) :
+			foreach ( wordvane_get_business_types() as $key => $bt ) :
 				$selected = ( ( $settings['business_type'] ?? '' ) === $key ) ? ' selected' : '';
 				?>
 				<div class="wv-biz-type-card<?php echo esc_attr( $selected ); ?>" data-value="<?php echo esc_attr( $key ); ?>">
@@ -70,7 +70,7 @@ $settings = get_option( 'wv_settings', [] );
 		<div class="wv-field-group">
 			<label class="wv-label">
 				<?php esc_html_e( 'What do you sell or offer?', 'wordvane' ); ?> <span class="required">*</span>
-				<?php echo wv_tooltip( 'business_niche' ); ?>
+				<?php echo wordvane_tooltip( 'business_niche' ); ?>
 			</label>
 			<textarea id="wv-what-they-sell" class="large-text wv-required" rows="3"
 				placeholder="<?php esc_attr_e( 'e.g. Handmade leather wallets and accessories for men, shipped worldwide', 'wordvane' ); ?>"><?php echo esc_textarea( $settings['what_they_sell'] ?? '' ); ?></textarea>
@@ -79,7 +79,7 @@ $settings = get_option( 'wv_settings', [] );
 		<div class="wv-field-group">
 			<label class="wv-label">
 				<?php esc_html_e( 'Who is your ideal customer?', 'wordvane' ); ?> <span class="required">*</span>
-				<?php echo wv_tooltip( 'target_audience' ); ?>
+				<?php echo wordvane_tooltip( 'target_audience' ); ?>
 			</label>
 			<textarea id="wv-ideal-customer" class="large-text wv-required" rows="3"
 				placeholder="<?php esc_attr_e( 'e.g. Men aged 25-45 who value quality over fast fashion and buy premium accessories', 'wordvane' ); ?>"><?php echo esc_textarea( $settings['ideal_customer'] ?? '' ); ?></textarea>
@@ -89,7 +89,7 @@ $settings = get_option( 'wv_settings', [] );
 			<label class="wv-label"><?php esc_html_e( 'Your main website goal:', 'wordvane' ); ?></label>
 			<?php
 			$current_goal = $settings['main_goal'] ?? 'sell';
-			foreach ( wv_get_main_goals() as $gval => $glabel ) :
+			foreach ( wordvane_get_main_goals() as $gval => $glabel ) :
 				?>
 				<label class="wv-radio-label">
 					<input type="radio" name="wv_main_goal" value="<?php echo esc_attr( $gval ); ?>"
@@ -114,7 +114,7 @@ $settings = get_option( 'wv_settings', [] );
 		<h1><?php esc_html_e( 'What are you promoting?', 'wordvane' ); ?></h1>
 		<p class="wv-wizard-sub">
 			<?php esc_html_e( 'Add up to 3 products or services. Articles will link to these naturally.', 'wordvane' ); ?>
-			<?php echo wv_tooltip( 'products' ); ?>
+			<?php echo wordvane_tooltip( 'products' ); ?>
 		</p>
 		<p class="wv-step-label"><?php esc_html_e( 'Step 3 of 3', 'wordvane' ); ?></p>
 
@@ -159,18 +159,16 @@ $settings = get_option( 'wv_settings', [] );
 
 		<p class="wv-wizard-plan-note">
 			<?php
-			if ( class_exists( 'WV_Features' ) && WV_Features::is_pro() ) {
-				esc_html_e( "You're on the Pro plan — unlimited articles.", 'wordvane' );
+			if ( Wordvane_Features::is_pro() ) {
+				esc_html_e( "You're on the Pro plan — includes Bulk Queue, Content Refresh, and more.", 'wordvane' );
 			} else {
-				$limit = class_exists( 'WV_Limits' ) ? WV_Limits::get_limit() : 5;
 				printf(
 					wp_kses(
-						/* translators: 1: limit, 2: upgrade URL */
-						__( "You're on the <strong>Free plan</strong> — %1\$d articles/month. <a href=\"%2\$s\">View Pro plans →</a>", 'wordvane' ),
+						/* translators: %s: upgrade URL */
+						__( "You're generating articles on the <strong>Free plan</strong>. <a href=\"%s\">View Wordvane Pro →</a>", 'wordvane' ),
 						[ 'strong' => [], 'a' => [ 'href' => [] ] ]
 					),
-					(int) $limit,
-					esc_url( class_exists( 'WV_Features' ) ? WV_Features::get_upgrade_url() : 'https://topdevs.net/wordvane-pro' )
+					esc_url( Wordvane_Features::get_upgrade_url() )
 				);
 			}
 			?>

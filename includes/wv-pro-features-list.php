@@ -1,5 +1,4 @@
 <?php
-// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- all functions are prefixed wv_ which is this plugin's registered prefix.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -10,12 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @return array[] Each entry has keys: 'slug', 'label'.
  */
-function wv_get_pro_features() {
+function wordvane_get_pro_features() {
 	return [
-		[
-			'slug'  => 'unlimited_generation',
-			'label' => __( 'Unlimited article generation — no monthly cap', 'wordvane' ),
-		],
 		[
 			'slug'  => 'bulk_queue',
 			'label' => __( 'Bulk Queue — generate from a keyword list in the background', 'wordvane' ),

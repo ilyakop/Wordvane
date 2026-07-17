@@ -3,7 +3,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class WV_Publisher {
+class Wordvane_Publisher {
 
 	public function __construct() {
 		add_action( 'wp_ajax_wv_publish_post', [ $this, 'ajax_publish_post' ] );
@@ -29,6 +29,18 @@ class WV_Publisher {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON container; decoded and used as a structured array below, not output directly.
 		$faq_schema_raw   = wp_unslash( $_POST['faq_schema'] ?? '[]' );
 		$faq_schema       = json_decode( $faq_schema_raw, true );
+		if ( is_array( $faq_schema ) ) {
+			$faq_schema = array_map( function( $item ) {
+				if ( ! is_array( $item ) ) {
+					return null;
+				}
+				return [
+					'question' => sanitize_text_field( $item['question'] ?? '' ),
+					'answer'   => sanitize_textarea_field( $item['answer'] ?? '' ),
+				];
+			}, $faq_schema );
+			$faq_schema = array_values( array_filter( $faq_schema ) );
+		}
 		$post_id          = absint( $_POST['post_id'] ?? 0 );
 
 		if ( empty( $post_title ) || empty( $post_content ) ) {
@@ -98,7 +110,7 @@ class WV_Publisher {
 			update_post_meta( $post_id, '_wv_faq_schema', $faq_schema );
 		}
 
-		WV_SEO::apply_seo_meta( $post_id, $meta_title, $meta_description, $target_keyword, is_array( $faq_schema ) ? $faq_schema : [] );
+		Wordvane_SEO::apply_seo_meta( $post_id, $meta_title, $meta_description, $target_keyword, is_array( $faq_schema ) ? $faq_schema : [] );
 
 		wp_send_json_success( [
 			'post_id'   => $post_id,
@@ -206,4 +218,4 @@ class WV_Publisher {
 	}
 }
 
-new WV_Publisher();
+new Wordvane_Publisher();

@@ -70,8 +70,8 @@ $checklist_tooltips = [
 	6 => __( 'Internal links tell Google which pages are important and keep readers on your site longer.', 'wordvane' ),
 ];
 $checklist_complete = count( $checklist );
-$is_pro             = WV_Features::is_pro();
-$upgrade_url        = WV_Features::get_upgrade_url();
+$is_pro             = Wordvane_Features::is_pro();
+$upgrade_url        = Wordvane_Features::get_upgrade_url();
 ?>
 <div class="wrap wv-insights-page">
 	<h1><?php esc_html_e( 'Your SEO Playbook', 'wordvane' ); ?></h1>

@@ -3,7 +3,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class WV_Generator {
+class Wordvane_Generator {
 
 	public function __construct() {
 		add_action( 'wp_ajax_wv_generate', [ $this, 'ajax_generate' ] );
@@ -14,11 +14,6 @@ class WV_Generator {
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_send_json_error( [ 'message' => 'Unauthorized' ] );
-			return;
-		}
-
-		if ( WV_Limits::is_limit_reached() ) {
-			wp_send_json_error( [ 'message' => 'limit_reached' ] );
 			return;
 		}
 
@@ -123,7 +118,8 @@ class WV_Generator {
 			return;
 		}
 
-		WV_Limits::increment_usage();
+		$wv_month_key = 'wv_article_count_' . gmdate( 'Y' ) . '_' . gmdate( 'm' );
+		update_option( $wv_month_key, (int) get_option( $wv_month_key, 0 ) + 1 );
 
 		/**
 		 * Fires after a successful AI generation.
@@ -288,4 +284,4 @@ Extra instructions: {$custom_instructions}";
 	}
 }
 
-new WV_Generator();
+new Wordvane_Generator();

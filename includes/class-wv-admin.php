@@ -3,15 +3,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class WV_Admin {
+class Wordvane_Admin {
 
 	public function __construct() {
 		add_action( 'admin_menu', [ $this, 'register_menus' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 
-		add_action( 'wp_ajax_wv_save_wizard', [ $this, 'ajax_save_wizard' ] );
-		add_action( 'wp_ajax_wv_save_settings', [ $this, 'ajax_save_settings' ] );
-		add_action( 'wp_ajax_wv_check_limit', [ $this, 'ajax_check_limit' ] );
+		add_action( 'wp_ajax_wv_save_wizard',    [ $this, 'ajax_save_wizard' ] );
+		add_action( 'wp_ajax_wv_save_settings',  [ $this, 'ajax_save_settings' ] );
 		add_action( 'wp_ajax_wv_save_checklist', [ $this, 'ajax_save_checklist' ] );
 		add_action( 'wp_ajax_wv_suggest_keyword', [ $this, 'ajax_suggest_keyword' ] );
 		add_action( 'wp_ajax_wv_dismiss_upsell', [ $this, 'ajax_dismiss_upsell' ] );
@@ -91,21 +90,21 @@ class WV_Admin {
 
 		wp_enqueue_style(
 			'wv-admin',
-			WV_PLUGIN_URL . 'admin/css/wv-admin.css',
+			WORDVANE_PLUGIN_URL . 'admin/css/wv-admin.css',
 			[],
-			WV_VERSION
+			WORDVANE_VERSION
 		);
 
 		wp_enqueue_script(
 			'wv-admin',
-			WV_PLUGIN_URL . 'admin/js/wv-admin.js',
+			WORDVANE_PLUGIN_URL . 'admin/js/wv-admin.js',
 			[ 'jquery' ],
-			WV_VERSION,
+			WORDVANE_VERSION,
 			true
 		);
 
 		$settings = get_option( 'wv_settings', [] );
-		$is_pro   = WV_Features::is_pro();
+		$is_pro   = Wordvane_Features::is_pro();
 
 		$fs              = function_exists( 'wordvane_fs' ) ? wordvane_fs() : null;
 		$trial_available = $fs
@@ -117,21 +116,15 @@ class WV_Admin {
 		wp_localize_script( 'wv-admin', 'wvAdmin', [
 			'ajaxurl'        => admin_url( 'admin-ajax.php' ),
 			'nonce'          => wp_create_nonce( 'wv_nonce' ),
-			'usage'          => WV_Limits::get_usage(),
-			'limit'          => WV_Limits::get_limit(),
-			'resetDate'      => WV_Limits::get_reset_date(),
-			'daysUntil'      => WV_Limits::get_days_until_reset(),
-			'percentage'     => WV_Limits::get_percentage(),
 			'wizardComplete' => (bool) get_option( 'wv_wizard_complete' ),
 			'products'       => $settings['products'] ?? [],
 			'hasAiProvider'  => function_exists( 'wp_ai_client_prompt' ),
 			'checklist'      => get_user_meta( get_current_user_id(), 'wv_checklist', true ) ?: [],
 			'isPro'          => $is_pro,
-			'upgradeUrl'     => WV_Features::get_upgrade_url(),
+			'upgradeUrl'     => Wordvane_Features::get_upgrade_url(),
 			'trialUrl'       => $trial_url,
 			'strings'        => [
 				'generating'             => __( 'Generating your article...', 'wordvane' ),
-				'limit_reached'          => __( 'Monthly limit reached.', 'wordvane' ),
 				'no_ai_provider'         => __( 'No AI provider is active. Go to Settings → Connectors to install one.', 'wordvane' ),
 				'err_generic'            => __( 'Generation failed: ', 'wordvane' ),
 				'err_network'            => __( 'Network error. Please try again.', 'wordvane' ),
@@ -146,9 +139,9 @@ class WV_Admin {
 				'view_post'              => __( 'View post ↗', 'wordvane' ),
 				'internal_links_tip'     => __( 'Consider adding internal links to other posts manually', 'wordvane' ),
 				'remove'                 => __( 'Remove', 'wordvane' ),
-				'placeholder_product_name'     => __( 'Product / Service Name', 'wordvane' ),
-				'placeholder_product_url'      => __( 'URL on your site', 'wordvane' ),
-				'placeholder_product_desc'     => __( 'e.g. Custom leather wallet, hand-stitched, 5 card slots, $89', 'wordvane' ),
+				'placeholder_product_name'       => __( 'Product / Service Name', 'wordvane' ),
+				'placeholder_product_url'        => __( 'URL on your site', 'wordvane' ),
+				'placeholder_product_desc'       => __( 'e.g. Custom leather wallet, hand-stitched, 5 card slots, $89', 'wordvane' ),
 				'placeholder_product_desc_short' => __( 'One-line description', 'wordvane' ),
 				'grade_a'   => __( 'Great — this article is well optimized. Publish it.', 'wordvane' ),
 				'grade_b'   => __( 'Good start. Fill in any missing items before publishing.', 'wordvane' ),
@@ -166,19 +159,19 @@ class WV_Admin {
 	}
 
 	public function page_generator() {
-		include WV_PLUGIN_DIR . 'admin/views/page-generator.php';
+		include WORDVANE_PLUGIN_DIR . 'admin/views/page-generator.php';
 	}
 
 	public function page_insights() {
-		include WV_PLUGIN_DIR . 'admin/views/page-insights.php';
+		include WORDVANE_PLUGIN_DIR . 'admin/views/page-insights.php';
 	}
 
 	public function page_settings() {
-		include WV_PLUGIN_DIR . 'admin/views/page-settings.php';
+		include WORDVANE_PLUGIN_DIR . 'admin/views/page-settings.php';
 	}
 
 	public function page_wizard() {
-		include WV_PLUGIN_DIR . 'admin/views/page-wizard.php';
+		include WORDVANE_PLUGIN_DIR . 'admin/views/page-wizard.php';
 	}
 
 	public function ajax_save_wizard() {
@@ -202,7 +195,7 @@ class WV_Admin {
 		update_option( 'wv_settings', $settings );
 		update_option( 'wv_wizard_complete', true );
 
-		$suggested_keyword = WV_Generator::suggest_keyword(
+		$suggested_keyword = Wordvane_Generator::suggest_keyword(
 			$settings['business_type'] ?? '',
 			$settings['what_they_sell'] ?? ''
 		);
@@ -228,23 +221,6 @@ class WV_Admin {
 		wp_send_json_success( [ 'message' => 'saved' ] );
 	}
 
-	public function ajax_check_limit() {
-		check_ajax_referer( 'wv_nonce', 'nonce' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( [ 'message' => 'Unauthorized' ] );
-			return;
-		}
-
-		wp_send_json_success( [
-			'usage'         => WV_Limits::get_usage(),
-			'limit'         => WV_Limits::get_limit(),
-			'limit_reached' => WV_Limits::is_limit_reached(),
-			'reset_date'    => WV_Limits::get_reset_date(),
-			'days_until'    => WV_Limits::get_days_until_reset(),
-		] );
-	}
-
 	public function ajax_save_checklist() {
 		check_ajax_referer( 'wv_nonce', 'nonce' );
 
@@ -267,7 +243,7 @@ class WV_Admin {
 		}
 
 		$settings = get_option( 'wv_settings', [] );
-		$keyword  = WV_Generator::suggest_keyword(
+		$keyword  = Wordvane_Generator::suggest_keyword(
 			$settings['business_type'] ?? '',
 			$settings['what_they_sell'] ?? ''
 		);
@@ -285,10 +261,7 @@ class WV_Admin {
 		$allowed = [ 'settings_comparison', 'insights_upgrade' ];
 		$key     = sanitize_key( wp_unslash( $_POST['key'] ?? '' ) );
 
-		// Also allow month-scoped limit keys (e.g. limit_2026_7)
-		$is_valid_limit_key = (bool) preg_match( '/^limit_\d{4}_\d{1,2}$/', $key );
-
-		if ( ! $is_valid_limit_key && ! in_array( $key, $allowed, true ) ) {
+		if ( ! in_array( $key, $allowed, true ) ) {
 			wp_send_json_error( [ 'message' => 'Invalid key.' ] );
 		}
 

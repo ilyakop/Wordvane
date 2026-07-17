@@ -1,6 +1,6 @@
 <?php
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- template vars are local to this included file, not truly global.
-// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- wv_tooltip() is the only unescaped call; it returns pre-escaped HTML.
+// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- wordvane_tooltip() is the only unescaped call; it returns pre-escaped HTML.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -9,8 +9,8 @@ if ( ! current_user_can( 'manage_options' ) ) {
 }
 
 $settings    = get_option( 'wv_settings', [] );
-$is_pro      = WV_Features::is_pro();
-$upgrade_url = WV_Features::get_upgrade_url();
+$is_pro      = Wordvane_Features::is_pro();
+$upgrade_url = Wordvane_Features::get_upgrade_url();
 $categories  = get_categories( [ 'hide_empty' => false ] );
 
 /**
@@ -81,7 +81,7 @@ $allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 		</h2>
 		<div class="wv-business-type-cards">
 			<?php
-			foreach ( wv_get_business_types() as $key => $bt ) :
+			foreach ( wordvane_get_business_types() as $key => $bt ) :
 				$selected = ( ( $settings['business_type'] ?? '' ) === $key ) ? ' selected' : '';
 				?>
 				<div class="wv-biz-type-card<?php echo esc_attr( $selected ); ?>" data-value="<?php echo esc_attr( $key ); ?>">
@@ -106,7 +106,7 @@ $allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 				<th>
 					<label for="wv-s-what-they-sell">
 						<?php esc_html_e( 'What do you sell or offer?', 'wordvane' ); ?>
-						<?php echo wv_tooltip( 'business_niche' ); ?>
+						<?php echo wordvane_tooltip( 'business_niche' ); ?>
 					</label>
 				</th>
 				<td>
@@ -117,7 +117,7 @@ $allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 				<th>
 					<label for="wv-s-ideal-customer">
 						<?php esc_html_e( 'Who is your ideal customer?', 'wordvane' ); ?>
-						<?php echo wv_tooltip( 'target_audience' ); ?>
+						<?php echo wordvane_tooltip( 'target_audience' ); ?>
 					</label>
 				</th>
 				<td>
@@ -129,7 +129,7 @@ $allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 				<td>
 					<?php
 					$current_goal = $settings['main_goal'] ?? 'sell';
-					foreach ( wv_get_main_goals() as $gval => $glabel ) :
+					foreach ( wordvane_get_main_goals() as $gval => $glabel ) :
 						?>
 						<label class="wv-radio-label">
 							<input type="radio" name="wv_s_main_goal" value="<?php echo esc_attr( $gval ); ?>"
@@ -143,7 +143,7 @@ $allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 				<th>
 					<label for="wv-s-brand-voice">
 						<?php esc_html_e( 'Brand Voice', 'wordvane' ); ?>
-						<?php echo wv_tooltip( 'brand_voice' ); ?>
+						<?php echo wordvane_tooltip( 'brand_voice' ); ?>
 					</label>
 				</th>
 				<td>
@@ -176,7 +176,7 @@ $allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 
 		<h2>
 			<?php esc_html_e( 'Products / Services', 'wordvane' ); ?>
-			<?php echo wv_tooltip( 'products' ); ?>
+			<?php echo wordvane_tooltip( 'products' ); ?>
 		</h2>
 
 		<div id="wv-products-repeater-settings">
@@ -229,12 +229,12 @@ $allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 			<tr>
 				<th>
 					<label><?php esc_html_e( 'Active SEO Plugin', 'wordvane' ); ?></label>
-					<?php echo wv_tooltip( 'seo_plugin' ); ?>
+					<?php echo wordvane_tooltip( 'seo_plugin' ); ?>
 				</th>
 				<td>
 					<?php
 					$current_seo = $settings['seo_plugin'] ?? 'none';
-					foreach ( wv_get_seo_plugin_options() as $spval => $splabel ) :
+					foreach ( wordvane_get_seo_plugin_options() as $spval => $splabel ) :
 						?>
 						<label class="wv-radio-label">
 							<input type="radio" name="wv_s_seo_plugin" value="<?php echo esc_attr( $spval ); ?>"
@@ -324,7 +324,7 @@ $allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 				<span class="wv-plan-badge wv-plan-badge-free"><?php esc_html_e( 'Free', 'wordvane' ); ?></span>
 				<ul>
 					<li>✓ <?php esc_html_e( '3 article types', 'wordvane' ); ?></li>
-					<li>✓ <?php esc_html_e( '5 articles / month', 'wordvane' ); ?></li>
+					<li>✓ <?php esc_html_e( 'Unlimited article generation', 'wordvane' ); ?></li>
 					<li>✓ <?php esc_html_e( '1 Business DNA profile', 'wordvane' ); ?></li>
 					<li>✓ <?php esc_html_e( 'Gutenberg block publishing', 'wordvane' ); ?></li>
 					<li>✓ <?php esc_html_e( 'SEO integration (Yoast, Rank Math)', 'wordvane' ); ?></li>
@@ -333,7 +333,7 @@ $allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 			<div class="wv-plan-col wv-plan-col-pro">
 				<span class="wv-plan-badge wv-plan-badge-pro"><?php esc_html_e( 'Pro', 'wordvane' ); ?></span>
 				<ul>
-					<?php foreach ( wv_get_pro_features() as $feature ) : ?>
+					<?php foreach ( wordvane_get_pro_features() as $feature ) : ?>
 					<li>✓ <?php echo esc_html( $feature['label'] ); ?></li>
 					<?php endforeach; ?>
 				</ul>

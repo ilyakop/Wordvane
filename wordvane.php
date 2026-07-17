@@ -13,42 +13,38 @@
  * Requires PHP: 7.4
  */
 
-// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- all functions are prefixed wv_ which is this plugin's registered prefix.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WV_VERSION', '1.0.0' );
-define( 'WV_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'WV_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'WORDVANE_VERSION', '1.0.0' );
+define( 'WORDVANE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'WORDVANE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
-require_once WV_PLUGIN_DIR . 'includes/class-wv-features.php';
-require_once WV_PLUGIN_DIR . 'includes/wv-tooltips.php';
-require_once WV_PLUGIN_DIR . 'includes/class-wv-limits.php';
-require_once WV_PLUGIN_DIR . 'includes/class-wv-generator.php';
-require_once WV_PLUGIN_DIR . 'includes/class-wv-publisher.php';
-require_once WV_PLUGIN_DIR . 'includes/class-wv-seo.php';
-require_once WV_PLUGIN_DIR . 'includes/class-wv-admin.php';
-require_once WV_PLUGIN_DIR . 'includes/wv-pro-features-list.php';
+require_once WORDVANE_PLUGIN_DIR . 'includes/class-wv-features.php';
+require_once WORDVANE_PLUGIN_DIR . 'includes/wv-tooltips.php';
+require_once WORDVANE_PLUGIN_DIR . 'includes/class-wv-generator.php';
+require_once WORDVANE_PLUGIN_DIR . 'includes/class-wv-publisher.php';
+require_once WORDVANE_PLUGIN_DIR . 'includes/class-wv-seo.php';
+require_once WORDVANE_PLUGIN_DIR . 'includes/class-wv-admin.php';
+require_once WORDVANE_PLUGIN_DIR . 'includes/wv-pro-features-list.php';
 
-register_activation_hook( __FILE__, 'wv_activate' );
-function wv_activate() {
-	$month_key = 'wv_article_count_' . gmdate( 'Y' ) . '_' . gmdate( 'm' );
+register_activation_hook( __FILE__, 'wordvane_activate' );
+function wordvane_activate() {
 	if ( ! get_option( 'wv_activated' ) ) {
 		update_option( 'wv_activated', '1' );
 		update_option( 'wv_wizard_complete', false );
-		add_option( $month_key, 0 );
 		set_transient( 'wv_activation_redirect', true, 30 );
 	}
 }
 
-register_deactivation_hook( __FILE__, 'wv_deactivate' );
-function wv_deactivate() {
-	wp_clear_scheduled_hook( 'wv_monthly_reset' );
+register_deactivation_hook( __FILE__, 'wordvane_deactivate' );
+function wordvane_deactivate() {
+	wp_clear_scheduled_hook( 'wv_monthly_reset' ); // clean up legacy cron from earlier versions
 }
 
-add_action( 'admin_init', 'wv_activation_redirect' );
-function wv_activation_redirect() {
+add_action( 'admin_init', 'wordvane_activation_redirect' );
+function wordvane_activation_redirect() {
 	if ( get_transient( 'wv_activation_redirect' ) ) {
 		delete_transient( 'wv_activation_redirect' );
 		if ( ! get_option( 'wv_wizard_complete' ) ) {
@@ -58,8 +54,8 @@ function wv_activation_redirect() {
 	}
 }
 
-add_action( 'admin_notices', 'wv_ai_provider_notice' );
-function wv_ai_provider_notice() {
+add_action( 'admin_notices', 'wordvane_ai_provider_notice' );
+function wordvane_ai_provider_notice() {
 	if ( function_exists( 'wp_ai_client_prompt' ) ) {
 		return;
 	}
@@ -89,7 +85,7 @@ if ( ! function_exists( 'wordvane_fs' ) ) {
 		global $wordvane_fs;
 
 		if ( ! isset( $wordvane_fs ) ) {
-			$sdk = WV_PLUGIN_DIR . 'vendor/freemius/start.php';
+			$sdk = WORDVANE_PLUGIN_DIR . 'vendor/freemius/start.php';
 			if ( ! file_exists( $sdk ) ) {
 				return null;
 			}
@@ -127,7 +123,7 @@ if ( ! function_exists( 'wordvane_fs' ) ) {
 	do_action( 'wordvane_fs_loaded' );
 }
 
-// Wire Freemius into WV_Features once the SDK is available.
+// Wire Freemius into Wordvane_Features once the SDK is available.
 add_filter( 'wordvane_is_pro', static function() {
 	$fs = wordvane_fs();
 	return $fs && $fs->can_use_premium_code();
@@ -149,12 +145,12 @@ add_filter( 'wordvane_upgrade_url', static function() {
 // Plugin action links (Plugins list page — plain text link, no notice styling)
 // ---------------------------------------------------------------------------
 add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), static function( $links ) {
-	if ( ! WV_Features::is_pro() ) {
+	if ( ! Wordvane_Features::is_pro() ) {
 		$pro_installed = class_exists( 'WVP_License' );
 		$label         = $pro_installed
 			? __( 'Activate License', 'wordvane' )
 			: __( 'Upgrade to Pro', 'wordvane' );
-		$upgrade_link  = '<a href="' . esc_url( WV_Features::get_upgrade_url() ) . '">' . $label . '</a>';
+		$upgrade_link  = '<a href="' . esc_url( Wordvane_Features::get_upgrade_url() ) . '">' . $label . '</a>';
 		array_unshift( $links, $upgrade_link );
 	}
 	return $links;
@@ -163,9 +159,9 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), static functio
 // ---------------------------------------------------------------------------
 // Dismissible upgrade widget on Insights dashboard (non-Pro users only)
 // ---------------------------------------------------------------------------
-add_action( 'wordvane_dashboard_widgets', 'wv_render_insights_upgrade_widget', 1 );
-function wv_render_insights_upgrade_widget() {
-	if ( WV_Features::is_pro() ) {
+add_action( 'wordvane_dashboard_widgets', 'wordvane_render_insights_upgrade_widget', 1 );
+function wordvane_render_insights_upgrade_widget() {
+	if ( Wordvane_Features::is_pro() ) {
 		return;
 	}
 	if ( get_user_meta( get_current_user_id(), 'wv_dismissed_insights_upgrade', true ) ) {
@@ -182,25 +178,25 @@ function wv_render_insights_upgrade_widget() {
 		&& method_exists( $fs, 'is_trial_utilized' )
 		&& ! $fs->is_trial_utilized()
 		&& method_exists( $fs, 'get_trial_url' );
-	$cta_url         = $trial_available ? $fs->get_trial_url() : WV_Features::get_upgrade_url();
+	$cta_url         = $trial_available ? $fs->get_trial_url() : Wordvane_Features::get_upgrade_url();
 	$cta_label       = $trial_available ? __( 'Start Free Trial →', 'wordvane' ) : __( 'Get Wordvane Pro →', 'wordvane' );
 
-	if ( $total_generated >= 5 ) {
+	if ( $total_generated >= 10 ) {
 		/* translators: %d: number of articles generated */
-		$copy = sprintf( __( "You've generated %d articles with Wordvane. At this pace you'll hit the 5/month cap repeatedly — Pro removes the limit entirely and adds Bulk Queue to scale to 50+ articles.", 'wordvane' ), $total_generated );
-	} elseif ( $total_generated >= 2 ) {
+		$copy = sprintf( __( "You've generated %d articles with Wordvane — Pro's Bulk Queue can process 50+ articles in the background automatically, saving hours of manual work.", 'wordvane' ), $total_generated );
+	} elseif ( $total_generated >= 3 ) {
 		/* translators: %d: number of articles generated */
-		$copy = sprintf( __( "You've generated %d articles. Pro removes the 5/month limit and unlocks Bulk Queue, Content Refresh Mode, and advanced article types.", 'wordvane' ), $total_generated );
+		$copy = sprintf( __( "You've generated %d articles. Upgrade to Pro to unlock Bulk Queue, Content Refresh Mode, and advanced article types like Comparison and Listicle.", 'wordvane' ), $total_generated );
 	} else {
-		$copy = __( 'Pro removes the 5/month limit and unlocks Bulk Queue, Content Refresh Mode, and advanced article types like Comparison and Listicle.', 'wordvane' );
+		$copy = __( 'Pro unlocks Bulk Queue to generate articles from a keyword list in the background, Content Refresh Mode for updating old posts, and advanced article types like Comparison and Listicle.', 'wordvane' );
 	}
 
-	include WV_PLUGIN_DIR . 'admin/views/widget-upgrade.php';
+	include WORDVANE_PLUGIN_DIR . 'admin/views/widget-upgrade.php';
 }
 
 // ---------------------------------------------------------------------------
 
 if ( is_admin() ) {
-	new WV_Admin();
-	new WV_SEO();
+	new Wordvane_Admin();
+	new Wordvane_SEO();
 }

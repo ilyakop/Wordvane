@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WV_Features {
+class Wordvane_Features {
 
 	/** Free-tier Business DNA profile count. */
 	const FREE_DNA_PROFILES = 1;

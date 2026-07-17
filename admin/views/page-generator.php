@@ -1,6 +1,6 @@
 <?php
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- template vars are local to this included file, not truly global.
-// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- wv_tooltip() is the only unescaped call; it returns pre-escaped HTML.
+// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- wordvane_tooltip() is the only unescaped call; it returns pre-escaped HTML.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -11,29 +11,17 @@ if ( ! current_user_can( 'edit_posts' ) ) {
 global $wp_version;
 $settings         = get_option( 'wv_settings', [] );
 $products         = $settings['products'] ?? [];
-$usage            = WV_Limits::get_usage();
-$limit            = WV_Limits::get_limit();
-$limit_reached    = WV_Limits::is_limit_reached();
-$percentage       = WV_Limits::get_percentage();
-$days_until_reset = WV_Limits::get_days_until_reset();
-$reset_date       = WV_Limits::get_reset_date();
+$month_key        = 'wv_article_count_' . gmdate( 'Y' ) . '_' . gmdate( 'm' );
+$usage_this_month = (int) get_option( $month_key, 0 );
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only nav flag set by our own redirect, not a form submission.
 $show_welcome     = isset( $_GET['wv_welcome'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['wv_welcome'] ) );
 $categories       = get_categories( [ 'hide_empty' => false ] );
-$is_pro           = WV_Features::is_pro();
-$upgrade_url      = WV_Features::get_upgrade_url();
+$is_pro           = Wordvane_Features::is_pro();
+$upgrade_url      = Wordvane_Features::get_upgrade_url();
 
 $wp_version_ok  = version_compare( $wp_version, '7.0', '>=' );
 $ai_provider_ok = function_exists( 'wp_ai_client_prompt' );
 $is_locked      = ! $wp_version_ok || ! $ai_provider_ok;
-
-$bar_color = 'wv-bar-green';
-if ( $usage >= 4 ) {
-	$bar_color = 'wv-bar-orange';
-}
-if ( $limit_reached ) {
-	$bar_color = 'wv-bar-red';
-}
 
 /**
  * Filters the article types available in the generator UI.
@@ -115,19 +103,14 @@ if ( $is_pro ) {
 
 $first_type_slug = array_key_first( $enabled_types ) ?? 'how-to';
 
-// Month-scoped dismiss key for the limit-reached box (resets automatically each month)
-$limit_month_key  = gmdate( 'Y' ) . '_' . (int) gmdate( 'm' );
-$limit_dismissed  = (bool) get_user_meta( get_current_user_id(), 'wv_dismissed_limit_' . $limit_month_key, true );
-
-// Freemius trial state (for limit-reached CTA)
 $fs              = function_exists( 'wordvane_fs' ) ? wordvane_fs() : null;
 $trial_available = $fs
+	&& method_exists( $fs, 'has_trial_plan' )
+	&& $fs->has_trial_plan()
 	&& method_exists( $fs, 'is_trial_utilized' )
 	&& ! $fs->is_trial_utilized()
 	&& method_exists( $fs, 'get_trial_url' );
 $trial_url       = $trial_available ? $fs->get_trial_url() : null;
-$limit_cta_url   = $trial_url ?: $upgrade_url;
-$limit_cta_label = $trial_available ? __( 'Start Free Trial →', 'wordvane' ) : __( 'Get Wordvane Pro →', 'wordvane' );
 
 // Publisher post types
 $publisher_post_types = apply_filters( 'wordvane_publisher_post_types', [ 'post' ] );
@@ -215,64 +198,18 @@ $pro_post_type_labels = [
 		<div class="wv-usage-counter">
 			<div class="wv-usage-left">
 				<strong>📊 <?php
-				if ( $is_pro ) {
-					/* translators: %d: number of articles generated this month */
-					printf( esc_html__( 'Articles this month: %d of unlimited used', 'wordvane' ), absint( $usage ) );
-				} else {
-					/* translators: 1: used count, 2: limit */
-					printf( esc_html__( 'Articles this month: %1$d of %2$d used', 'wordvane' ), absint( $usage ), absint( $limit ) );
-				}
+				/* translators: %d: number of articles generated this month */
+				printf( esc_html__( 'Articles this month: %d', 'wordvane' ), absint( $usage_this_month ) );
 				?></strong>
-				<?php if ( ! $is_pro ) : ?>
-				<?php echo wv_tooltip( 'article_limit' ); ?>
-				<?php endif; ?>
 			</div>
+			<?php if ( ! $is_pro ) : ?>
 			<div class="wv-usage-right">
-				<?php if ( ! $is_pro ) : ?>
-				<div class="wv-progress-bar-wrap">
-					<div class="wv-progress-bar <?php echo esc_attr( $bar_color ); ?>" style="width:<?php echo esc_attr( $percentage ); ?>%"></div>
-				</div>
-				<span class="wv-reset-note">
-					<?php
-					if ( $limit_reached ) {
-						/* translators: %s: reset date */
-						printf( esc_html__( 'Resets on %s', 'wordvane' ), esc_html( $reset_date ) );
-					} else {
-						/* translators: %d: number of days until monthly limit resets */
-						printf( esc_html__( 'Resets in %d days', 'wordvane' ), absint( $days_until_reset ) );
-					}
-					?>
-				</span>
-				<?php endif; ?>
-				<?php if ( ! $is_pro && ! $limit_reached ) : ?>
 				<a href="<?php echo esc_url( $upgrade_url ); ?>" class="wv-upgrade-link">
-					<?php esc_html_e( 'Upgrade for unlimited', 'wordvane' ); ?>
+					<?php esc_html_e( 'Upgrade to Pro →', 'wordvane' ); ?>
 				</a>
-				<?php endif; ?>
 			</div>
+			<?php endif; ?>
 		</div>
-
-		<?php if ( $limit_reached && ! $is_pro && ! $limit_dismissed ) : ?>
-		<div class="wv-limit-reached-box" id="wv-limit-reached-box">
-			<button type="button"
-				class="wv-dismiss-btn"
-				data-dismiss-key="limit_<?php echo esc_attr( $limit_month_key ); ?>"
-				aria-label="<?php esc_attr_e( 'Dismiss', 'wordvane' ); ?>">✕</button>
-			<h3>🔒 <?php esc_html_e( 'You have used all 5 free articles this month.', 'wordvane' ); ?></h3>
-			<p><?php
-				/* translators: %s: reset date */
-				printf( esc_html__( 'Your limit resets on %s. Pro removes it entirely.', 'wordvane' ), esc_html( $reset_date ) );
-			?></p>
-			<ul>
-				<li>✓ <?php esc_html_e( 'Unlimited article generation', 'wordvane' ); ?></li>
-				<li>✓ <?php esc_html_e( 'Bulk queue — schedule 50 articles at once', 'wordvane' ); ?></li>
-				<li>✓ <?php esc_html_e( 'All article types including Comparison and Listicle', 'wordvane' ); ?></li>
-			</ul>
-			<a href="<?php echo esc_url( $limit_cta_url ); ?>" class="button wv-cta-btn">
-				<?php echo esc_html( $limit_cta_label ); ?>
-			</a>
-		</div>
-		<?php endif; ?>
 
 		<div id="wv-generator-layout" class="wv-generator-layout">
 			<!-- Input Form -->
@@ -281,7 +218,7 @@ $pro_post_type_labels = [
 					<div class="wv-field-group">
 						<label class="wv-label" for="wv-keyword">
 							<?php esc_html_e( 'Target Keyword', 'wordvane' ); ?> <span class="required">*</span>
-							<?php echo wv_tooltip( 'target_keyword' ); ?>
+							<?php echo wordvane_tooltip( 'target_keyword' ); ?>
 						</label>
 						<input type="text" id="wv-keyword" class="large-text"
 							placeholder="<?php esc_attr_e( 'e.g. affordable wedding flowers Chicago', 'wordvane' ); ?>">
@@ -293,7 +230,7 @@ $pro_post_type_labels = [
 					<div class="wv-field-group">
 						<label class="wv-label" for="wv-secondary-keywords">
 							<?php esc_html_e( 'Secondary Keywords', 'wordvane' ); ?>
-							<?php echo wv_tooltip( 'secondary_keywords' ); ?>
+							<?php echo wordvane_tooltip( 'secondary_keywords' ); ?>
 						</label>
 						<input type="text" id="wv-secondary-keywords" class="large-text"
 							placeholder="<?php esc_attr_e( 'e.g. bridal bouquets, wedding flower costs (comma separated)', 'wordvane' ); ?>">
@@ -302,7 +239,7 @@ $pro_post_type_labels = [
 					<div class="wv-field-group">
 						<label class="wv-label">
 							<?php esc_html_e( 'Article Type', 'wordvane' ); ?> <span class="required">*</span>
-							<?php echo wv_tooltip( 'article_type' ); ?>
+							<?php echo wordvane_tooltip( 'article_type' ); ?>
 						</label>
 						<div class="wv-article-type-cards">
 							<?php foreach ( $enabled_types as $type_slug => $type ) : ?>
@@ -341,7 +278,7 @@ $pro_post_type_labels = [
 					<div class="wv-field-group">
 						<label class="wv-label" for="wv-featured-product">
 							<?php esc_html_e( 'Featured Product', 'wordvane' ); ?>
-							<?php echo wv_tooltip( 'featured_product' ); ?>
+							<?php echo wordvane_tooltip( 'featured_product' ); ?>
 						</label>
 						<select id="wv-featured-product">
 							<option value="-1"><?php esc_html_e( 'No specific product — general brand awareness', 'wordvane' ); ?></option>
@@ -363,15 +300,9 @@ $pro_post_type_labels = [
 							placeholder="<?php esc_attr_e( "Any extra notes for this article. e.g. 'Mention our summer sale', 'Write for complete beginners', 'Keep a casual friendly tone'", 'wordvane' ); ?>"></textarea>
 					</div>
 
-					<?php if ( ! $limit_reached ) : ?>
 					<button type="button" id="wv-generate-btn" class="button button-primary button-hero wv-generate-btn">
 						✨ <?php esc_html_e( 'Generate Article', 'wordvane' ); ?>
 					</button>
-					<?php else : ?>
-					<button type="button" class="button button-primary button-hero wv-generate-btn" disabled>
-						🔒 <?php esc_html_e( 'Monthly limit reached', 'wordvane' ); ?>
-					</button>
-					<?php endif; ?>
 				</div>
 			</div>
 
@@ -400,7 +331,7 @@ $pro_post_type_labels = [
 								<div class="wv-field-group">
 									<label class="wv-label" for="wv-meta-title">
 										<?php esc_html_e( 'Meta Title', 'wordvane' ); ?>
-										<?php echo wv_tooltip( 'meta_title' ); ?>
+										<?php echo wordvane_tooltip( 'meta_title' ); ?>
 									</label>
 									<input type="text" id="wv-meta-title" class="large-text" maxlength="80">
 									<div class="wv-char-counter" id="wv-meta-title-counter">
@@ -411,7 +342,7 @@ $pro_post_type_labels = [
 								<div class="wv-field-group">
 									<label class="wv-label" for="wv-meta-description">
 										<?php esc_html_e( 'Meta Description', 'wordvane' ); ?>
-										<?php echo wv_tooltip( 'meta_description' ); ?>
+										<?php echo wordvane_tooltip( 'meta_description' ); ?>
 									</label>
 									<textarea id="wv-meta-description" class="large-text" rows="3" maxlength="200"></textarea>
 									<div class="wv-char-counter" id="wv-meta-desc-counter">
@@ -513,7 +444,6 @@ $pro_post_type_labels = [
 						<button type="button" id="wv-copy-html" class="button">
 							📋 <?php esc_html_e( 'Copy HTML', 'wordvane' ); ?>
 						</button>
-						<span class="wv-muted-note"><?php esc_html_e( 'Regenerating uses 1 of your monthly articles', 'wordvane' ); ?></span>
 					</div>
 				</div>
 			</div>

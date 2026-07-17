@@ -1,10 +1,9 @@
 <?php
-// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- all functions are prefixed wv_ which is this plugin's registered prefix.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-function wv_get_tooltips() {
+function wordvane_get_tooltips() {
 	return [
 		'business_niche' => [
 			'label'       => __( 'What is your business niche?', 'wordvane' ),
@@ -48,12 +47,6 @@ function wv_get_tooltips() {
 			'example'     => __( 'Writing about "how to choose wedding flowers"? Feature your bouquet package. Writing general tips? Choose "No specific product".', 'wordvane' ),
 			'pro_tip'     => __( 'Match the product to the article topic for the most natural result.', 'wordvane' ),
 		],
-		'article_limit' => [
-			'label'       => __( 'Why is there a 5 article limit?', 'wordvane' ),
-			'explanation' => __( 'The free version of Wordvane includes 5 articles per month. This resets on the 1st of every month.', 'wordvane' ),
-			'example'     => __( 'Used 4 of 5 this month? Your limit resets automatically on the 1st.', 'wordvane' ),
-			'pro_tip'     => __( 'Upgrade to Wordvane Pro for unlimited article generation, bulk scheduling, and more article types.', 'wordvane' ),
-		],
 		'meta_title' => [
 			'label'       => __( 'What is a meta title?', 'wordvane' ),
 			'explanation' => __( 'The title Google shows in search results. It should include your target keyword and be under 60 characters — otherwise Google cuts it off.', 'wordvane' ),
@@ -92,7 +85,7 @@ function wv_get_tooltips() {
  *
  * @return array[] Keys are slugs; values have 'icon' and 'label'.
  */
-function wv_get_business_types() {
+function wordvane_get_business_types() {
 	return [
 		'ecommerce'    => [ 'icon' => '🛍️', 'label' => __( 'eCommerce Store', 'wordvane' ) ],
 		'blog'         => [ 'icon' => '📝', 'label' => __( 'Blog / Content Site', 'wordvane' ) ],
@@ -108,7 +101,7 @@ function wv_get_business_types() {
  *
  * @return array Keys are values; values are translated labels.
  */
-function wv_get_main_goals() {
+function wordvane_get_main_goals() {
 	return [
 		'sell'      => __( 'Sell products or services', 'wordvane' ),
 		'leads'     => __( 'Generate leads and inquiries', 'wordvane' ),
@@ -122,7 +115,7 @@ function wv_get_main_goals() {
  *
  * @return array Keys are option values; values are translated labels.
  */
-function wv_get_seo_plugin_options() {
+function wordvane_get_seo_plugin_options() {
 	return [
 		'none'     => __( 'None', 'wordvane' ),
 		'yoast'    => __( 'Yoast SEO', 'wordvane' ),
@@ -131,8 +124,8 @@ function wv_get_seo_plugin_options() {
 	];
 }
 
-function wv_tooltip( $key ) {
-	$tooltips = wv_get_tooltips();
+function wordvane_tooltip( $key ) {
+	$tooltips = wordvane_get_tooltips();
 	if ( ! isset( $tooltips[ $key ] ) ) {
 		return '';
 	}
