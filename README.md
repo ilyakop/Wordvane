@@ -97,7 +97,7 @@ Wordvane Pro is a separate paid add-on. Minimum version requirement: Wordvane fr
 - White-label PDF/CSV reporting
 - Team roles & permissions
 
-**Purchase:** https://topdevs.net/wordvane-pro
+**Purchase:** https://wordvane.com
 
 ---
 

@@ -109,7 +109,7 @@ Wordvane Pro is a separate paid add-on distributed via Freemius.
 
 Wordvane Pro requires Wordvane free ≥ 1.0.0 and WordPress ≥ 7.0.
 
-For pricing and purchase: https://topdevs.net/wordvane-pro
+For pricing and purchase: https://wordvane.com
 
 == Screenshots ==
 
