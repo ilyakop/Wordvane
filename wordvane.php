@@ -45,12 +45,21 @@ function wordvane_deactivate() {
 
 add_action( 'admin_init', 'wordvane_activation_redirect' );
 function wordvane_activation_redirect() {
-	if ( get_transient( 'wv_activation_redirect' ) ) {
-		delete_transient( 'wv_activation_redirect' );
-		if ( ! get_option( 'wv_wizard_complete' ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wv-wizard' ) );
-			exit;
-		}
+	if ( ! get_transient( 'wv_activation_redirect' ) ) {
+		return;
+	}
+	delete_transient( 'wv_activation_redirect' );
+	// When Freemius is active it owns the post-activation redirect:
+	// - New installs:    opt-in screen → after_connect/skip_url filters below → wizard
+	// - Returning users: first-path in menu config → wizard (while not yet complete)
+	// Only redirect directly when the Freemius SDK is absent.
+	$fs = function_exists( 'wordvane_fs' ) ? wordvane_fs() : null;
+	if ( $fs ) {
+		return;
+	}
+	if ( ! get_option( 'wv_wizard_complete' ) ) {
+		wp_safe_redirect( admin_url( 'admin.php?page=wv-wizard' ) );
+		exit;
 	}
 }
 
@@ -80,6 +89,23 @@ function wordvane_ai_provider_notice() {
 // ---------------------------------------------------------------------------
 // Freemius SDK
 // ---------------------------------------------------------------------------
+
+// After a new-install opt-in (connect or skip), send to wizard instead of generator.
+// Registered before do_action('wordvane_fs_loaded') fires inside the block below.
+add_action( 'wordvane_fs_loaded', static function() {
+	$fs = wordvane_fs();
+	if ( ! $fs || get_option( 'wv_wizard_complete' ) ) {
+		return;
+	}
+	$wizard_url = admin_url( 'admin.php?page=wv-wizard' );
+	$to_wizard  = static function() use ( $wizard_url ) {
+		return $wizard_url;
+	};
+	$fs->add_filter( 'after_connect_url',         $to_wizard );
+	$fs->add_filter( 'after_skip_url',            $to_wizard );
+	$fs->add_filter( 'after_pending_connect_url', $to_wizard );
+} );
+
 if ( ! function_exists( 'wordvane_fs' ) ) {
 	function wordvane_fs() {
 		global $wordvane_fs;
@@ -108,10 +134,13 @@ if ( ! function_exists( 'wordvane_fs' ) ) {
 					'is_require_payment' => true,
 				),
 				'menu'                => array(
-					'slug'    => 'wv-generator',
-					'account' => true,
-					'contact' => false,
-					'support' => false,
+					'slug'       => 'wv-generator',
+					'account'    => true,
+					'contact'    => false,
+					'support'    => false,
+					// For returning users (already registered, no opt-in shown): redirect to
+					// wizard on first activation if setup isn't complete yet.
+					'first-path' => get_option( 'wv_wizard_complete' ) ? false : 'admin.php?page=wv-wizard',
 				),
 			) );
 		}
