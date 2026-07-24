@@ -63,9 +63,22 @@ function wordvane_activation_redirect() {
 	}
 }
 
+function wordvane_has_configured_ai_provider(): bool {
+	if ( ! class_exists( 'WordPress\AiClient\AiClient' ) ) {
+		return false;
+	}
+	$registry = \WordPress\AiClient\AiClient::defaultRegistry();
+	foreach ( $registry->getRegisteredProviderIds() as $id ) {
+		if ( $registry->isProviderConfigured( $id ) ) {
+			return true;
+		}
+	}
+	return false;
+}
+
 add_action( 'admin_notices', 'wordvane_ai_provider_notice' );
 function wordvane_ai_provider_notice() {
-	if ( function_exists( 'wp_ai_client_prompt' ) ) {
+	if ( wordvane_has_configured_ai_provider() ) {
 		return;
 	}
 	$screen = get_current_screen();

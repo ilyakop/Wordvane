@@ -20,7 +20,7 @@ $is_pro           = Wordvane_Features::is_pro();
 $upgrade_url      = Wordvane_Features::get_upgrade_url();
 
 $wp_version_ok  = version_compare( $wp_version, '7.0', '>=' );
-$ai_provider_ok = function_exists( 'wp_ai_client_prompt' );
+$ai_provider_ok = wordvane_has_configured_ai_provider();
 $is_locked      = ! $wp_version_ok || ! $ai_provider_ok;
 
 /**
