@@ -42,10 +42,10 @@ function wordvane_get_tooltips() {
 			'pro_tip'     => __( 'Mix your types. How-To articles bring traffic. Product Spotlights convert visitors into buyers.', 'wordvane' ),
 		],
 		'featured_product' => [
-			'label'       => __( 'Which product should this article promote?', 'wordvane' ),
-			'explanation' => __( 'The article will naturally mention and link to this product where it makes sense. It is never forced — the AI weaves it in organically.', 'wordvane' ),
-			'example'     => __( 'Writing about "how to choose wedding flowers"? Feature your bouquet package. Writing general tips? Choose "No specific product".', 'wordvane' ),
-			'pro_tip'     => __( 'Match the product to the article topic for the most natural result.', 'wordvane' ),
+			'label'       => __( 'How should this article handle product promotion?', 'wordvane' ),
+			'explanation' => __( 'No product mention: zero brand content — the article stays purely informational. Soft brand mention: one incidental sentence about your brand where it fits naturally, no CTA. Featured spotlight: a full product section with a link, for articles where the product is the point.', 'wordvane' ),
+			'example'     => __( 'Writing a general tips post? Use "No product mention". Answering industry questions? Try "Soft brand mention". Doing a product deep-dive? Choose the specific product.', 'wordvane' ),
+			'pro_tip'     => __( 'Match promotion level to intent: informational content converts better without a heavy sales pitch.', 'wordvane' ),
 		],
 		'meta_title' => [
 			'label'       => __( 'What is a meta title?', 'wordvane' ),

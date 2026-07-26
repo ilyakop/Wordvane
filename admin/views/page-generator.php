@@ -281,7 +281,8 @@ $pro_post_type_labels = [
 							<?php echo wordvane_tooltip( 'featured_product' ); ?>
 						</label>
 						<select id="wv-featured-product">
-							<option value="-1"><?php esc_html_e( 'No specific product — general brand awareness', 'wordvane' ); ?></option>
+							<option value="none"><?php esc_html_e( 'No product mention', 'wordvane' ); ?></option>
+							<option value="soft"><?php esc_html_e( 'Soft brand mention', 'wordvane' ); ?></option>
 							<?php foreach ( $products as $i => $product ) :
 								if ( empty( $product['name'] ) ) continue;
 								?>

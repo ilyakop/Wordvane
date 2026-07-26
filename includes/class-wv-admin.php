@@ -118,7 +118,6 @@ class Wordvane_Admin {
 			'nonce'          => wp_create_nonce( 'wv_nonce' ),
 			'wizardComplete' => (bool) get_option( 'wv_wizard_complete' ),
 			'products'       => $settings['products'] ?? [],
-			'hasAiProvider'  => wordvane_has_configured_ai_provider(),
 			'checklist'      => get_user_meta( get_current_user_id(), 'wv_checklist', true ) ?: [],
 			'isPro'          => $is_pro,
 			'upgradeUrl'     => Wordvane_Features::get_upgrade_url(),

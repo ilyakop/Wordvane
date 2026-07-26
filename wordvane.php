@@ -23,6 +23,7 @@ define( 'WORDVANE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 require_once WORDVANE_PLUGIN_DIR . 'includes/class-wv-features.php';
 require_once WORDVANE_PLUGIN_DIR . 'includes/wv-tooltips.php';
+require_once WORDVANE_PLUGIN_DIR . 'includes/class-wv-prompt-builder.php';
 require_once WORDVANE_PLUGIN_DIR . 'includes/class-wv-generator.php';
 require_once WORDVANE_PLUGIN_DIR . 'includes/class-wv-publisher.php';
 require_once WORDVANE_PLUGIN_DIR . 'includes/class-wv-seo.php';

@@ -17,7 +17,7 @@ class Wordvane_Generator {
 			return;
 		}
 
-		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
+		if ( ! wordvane_has_configured_ai_provider() ) {
 			wp_send_json_error( [ 'message' => 'no_ai_provider' ] );
 			return;
 		}
@@ -27,7 +27,7 @@ class Wordvane_Generator {
 		$keyword             = sanitize_text_field( wp_unslash( $_POST['keyword'] ?? '' ) );
 		$secondary_keywords  = sanitize_text_field( wp_unslash( $_POST['secondary_keywords'] ?? '' ) );
 		$article_type        = sanitize_text_field( wp_unslash( $_POST['article_type'] ?? 'how-to' ) );
-		$featured_product    = absint( $_POST['featured_product'] ?? -1 );
+		$featured_product    = sanitize_key( wp_unslash( $_POST['featured_product'] ?? 'none' ) );
 		$custom_instructions = sanitize_textarea_field( wp_unslash( $_POST['custom_instructions'] ?? '' ) );
 
 		if ( empty( $keyword ) ) {
@@ -49,7 +49,7 @@ class Wordvane_Generator {
 		 *   @type string $keyword             Primary keyword.
 		 *   @type string $secondary_keywords  Comma-separated secondary keywords.
 		 *   @type string $article_type        Content type slug (how-to, spotlight, faq, or Pro slugs).
-		 *   @type int    $featured_product    Product array index, or -1 for none.
+		 *   @type string $featured_product    'none' | 'soft' | '0' | '1' | '2' — product mode or index.
 		 *   @type string $custom_instructions Extra user-supplied instructions.
 		 *   @type array  $settings            Business DNA option array.
 		 *   @type int    $max_tokens          AI client max_tokens. Default 4096.
@@ -65,11 +65,21 @@ class Wordvane_Generator {
 			'featured_product'    => $featured_product,
 			'custom_instructions' => $custom_instructions,
 			'settings'            => $settings,
-			'max_tokens'          => 4096,
+			'max_tokens'          => 6000,
 		], get_current_user_id() );
 
+		// Log prompt-construction inputs whenever WP_DEBUG is on.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( sprintf(
+				'[Wordvane] ajax_generate — featured_product: %s | business_name: %s | product_names: %s',
+				var_export( $generation_args['featured_product'], true ),
+				var_export( $generation_args['settings']['business_name'] ?? '(not set)', true ),
+				var_export( array_column( $generation_args['settings']['products'] ?? [], 'name' ), true )
+			) );
+		}
+
 		$system_prompt = $generation_args['_system_prompt']
-			?? $this->build_system_prompt(
+			?? Wordvane_Prompt_Builder::build_system_prompt(
 				$generation_args['settings'],
 				$generation_args['keyword'],
 				$generation_args['secondary_keywords'],
@@ -78,7 +88,7 @@ class Wordvane_Generator {
 			);
 
 		$user_message = $generation_args['_user_message']
-			?? $this->build_user_message(
+			?? Wordvane_Prompt_Builder::build_user_message(
 				$generation_args['article_type'],
 				$generation_args['keyword'],
 				$generation_args['secondary_keywords'],
@@ -132,12 +142,56 @@ class Wordvane_Generator {
 		 */
 		do_action( 'wordvane_after_generate', $result, $generation_args );
 
-		wp_send_json_success( [ 'text' => $result ] );
+		$meta = self::extract_metadata( $result, $generation_args['keyword'] );
+
+		$response = [ 'text' => $result, 'meta' => $meta ];
+
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$response['_debug'] = [
+				'featured_product' => $generation_args['featured_product'],
+				'system_prompt'    => $system_prompt,
+				'user_message'     => $user_message,
+			];
+		}
+
+		wp_send_json_success( $response );
 	}
 
 	public function extend_ai_timeout( $args ) {
 		$args['timeout'] = 150;
 		return $args;
+	}
+
+	private static function extract_metadata( string $article_text, string $keyword ): array {
+		$plain = wp_strip_all_tags( $article_text );
+		$plain = mb_substr( $plain, 0, 10000 );
+
+		$prompt_text = "Based on the article below, output ONLY a valid JSON object — no explanation, no code fences, no markdown, just the raw JSON.\n\n"
+			. "Required fields:\n"
+			. "- meta_title: under 60 chars, include \"" . $keyword . "\" near the start\n"
+			. "- meta_description: under 155 chars, action-oriented, include the keyword\n"
+			. "- slug: URL-friendly, hyphens only, no stop words\n"
+			. "- tags: JSON array of 5 relevant tag strings\n"
+			. "- faq_schema: JSON array of 5 objects, each {\"question\":\"...\",\"answer\":\"...\"}, based on FAQ content in the article\n\n"
+			. "Article:\n" . $plain;
+
+		$response = wp_ai_client_prompt()
+			->with_text( $prompt_text )
+			->using_max_tokens( 1200 )
+			->generate_text();
+
+		if ( is_wp_error( $response ) ) {
+			return [];
+		}
+
+		$json_str = trim( $response );
+		if ( strncmp( $json_str, '```', 3 ) === 0 ) {
+			$json_str = preg_replace( '/^```[a-z]*\n?/', '', $json_str );
+			$json_str = rtrim( $json_str, " \n`" );
+		}
+
+		$meta = json_decode( $json_str, true );
+		return is_array( $meta ) ? $meta : [];
 	}
 
 	public static function suggest_keyword( $business_type, $what_they_sell ) {
@@ -157,131 +211,6 @@ class Wordvane_Generator {
 		return trim( $result );
 	}
 
-	private function build_system_prompt( $settings, $keyword, $secondary_keywords, $article_type, $featured_product_index ) {
-		$business_name  = $settings['business_name'] ?? 'our business';
-		$business_type  = $settings['business_type'] ?? 'business';
-		$what_they_sell = $settings['what_they_sell'] ?? '';
-		$ideal_customer = $settings['ideal_customer'] ?? '';
-		$main_goal      = $settings['main_goal'] ?? '';
-		$locations      = $settings['locations_served'] ?? '';
-		$brand_voice    = $settings['brand_voice'] ?? 'Professional and helpful';
-		$topics_avoid   = $settings['topics_to_avoid'] ?? '';
-		$products       = $settings['products'] ?? [];
-
-		$products_text = '';
-		if ( ! empty( $products ) ) {
-			foreach ( $products as $p ) {
-				if ( ! empty( $p['name'] ) ) {
-					$products_text .= '- ' . $p['name'];
-					if ( ! empty( $p['url'] ) ) {
-						$products_text .= ' | URL: ' . $p['url'];
-					}
-					if ( ! empty( $p['description'] ) ) {
-						$products_text .= ' | ' . $p['description'];
-					}
-					$products_text .= "\n";
-				}
-			}
-		}
-
-		$featured_product_name = 'general brand awareness';
-		$featured_product_url  = '';
-		if ( $featured_product_index >= 0 && isset( $products[ $featured_product_index ] ) ) {
-			$fp                    = $products[ $featured_product_index ];
-			$featured_product_name = $fp['name'] ?? '';
-			$featured_product_url  = $fp['url'] ?? '';
-		}
-
-		return "You are an expert SEO content writer for {$business_name}.
-
-Business type: {$business_type}
-What they offer: {$what_they_sell}
-Ideal customer: {$ideal_customer}
-Business goal: {$main_goal}
-Locations served: {$locations}
-Brand voice: {$brand_voice}
-Topics to never mention: {$topics_avoid}
-
-Products to promote:
-{$products_text}
-
-Writing rules — follow these exactly:
-- Write like a real human expert, not a content robot
-- Short paragraphs — 2 to 3 sentences maximum
-- Vary sentence length — mix short punchy sentences with longer ones. Some sentences should be very short.
-- Use real-world examples that match {$business_type}
-- Link to products naturally — never force it
-- NEVER use these phrases: \"In today's digital landscape\", \"In conclusion\", \"It's worth noting\", \"Dive into\", \"Game-changer\", \"Leverage\", \"Needless to say\", \"At the end of the day\"
-- Write for humans first, Google second
-
-Article structure — use this exact order:
-1. Hook opening: start with a relatable problem, surprising stat, or bold statement. NEVER start with \"Are you looking for...\"
-2. Context: why this topic matters (2 short paragraphs)
-3. Main body: structure depends on article type:
-   - How-To: numbered steps with subheadings
-   - Spotlight: problem → solution → features → proof
-   - FAQ: 5 real customer questions with direct answers
-4. Product mention: natural reference to {$featured_product_name} with a link to {$featured_product_url}
-5. Closing: one short paragraph with a clear next step — no \"In conclusion\"
-6. FAQ section: 5 questions a real customer would Google, with concise direct answers (for featured snippets)
-
-SEO requirements:
-- H1 must contain: {$keyword}
-- First paragraph must contain: {$keyword}
-- At least one H2 must be a variation of: {$keyword}
-- Use secondary keywords ({$secondary_keywords}) naturally, 2-3 times each throughout the article
-- Target length: 1500 words
-
-OUTPUT FORMAT — THIS IS MANDATORY:
-- Output raw HTML directly. Do NOT use markdown. Do NOT wrap anything in code fences (no ```html, no ```json, no ``` of any kind).
-- Use only these HTML tags: h1, h2, h3, p, ul, ol, li, strong, em, a
-- Immediately after the last line of HTML (no blank line separator), output the JSON block below on a new line starting with {
-- The JSON block must start with { and end with } with no text before or after it
-
-{
-  \"meta_title\": \"\",
-  \"meta_description\": \"\",
-  \"slug\": \"\",
-  \"tags\": [],
-  \"faq_schema\": [
-    {\"question\": \"\", \"answer\": \"\"},
-    {\"question\": \"\", \"answer\": \"\"},
-    {\"question\": \"\", \"answer\": \"\"},
-    {\"question\": \"\", \"answer\": \"\"},
-    {\"question\": \"\", \"answer\": \"\"}
-  ]
-}
-
-meta_title: under 60 chars, include {$keyword} near the start
-meta_description: under 155 chars, action-oriented, include keyword, give a reason to click
-slug: URL-friendly, hyphens only, no stop words
-tags: 5 relevant WordPress tags as array
-faq_schema: same 5 FAQ questions from the article body";
-	}
-
-	private function build_user_message( $article_type, $keyword, $secondary_keywords, $settings, $featured_product_index, $custom_instructions ) {
-		$products    = $settings['products'] ?? [];
-		$type_labels = [
-			'how-to'    => 'How-To Guide',
-			'spotlight' => 'Product Spotlight',
-			'faq'       => 'FAQ Post',
-		];
-		$type_label = $type_labels[ $article_type ] ?? 'How-To Guide';
-
-		$featured_name = 'No specific product — general brand awareness';
-		$featured_url  = '';
-		if ( $featured_product_index >= 0 && isset( $products[ $featured_product_index ] ) ) {
-			$fp            = $products[ $featured_product_index ];
-			$featured_name = $fp['name'] ?? '';
-			$featured_url  = $fp['url'] ?? '';
-		}
-
-		return "Write a {$type_label} article.
-Primary keyword: {$keyword}
-Secondary keywords: {$secondary_keywords}
-Featured product: {$featured_name} ({$featured_url})
-Extra instructions: {$custom_instructions}";
-	}
 }
 
 new Wordvane_Generator();

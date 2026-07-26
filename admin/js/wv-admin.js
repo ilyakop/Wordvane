@@ -499,7 +499,7 @@
                 timeout: 120000
             }).done((res) => {
                 if (res.success) {
-                    this.finishGeneration(res.data.text, data.keyword);
+                    this.finishGeneration(res.data.text, data.keyword, res.data.meta || null);
                 } else {
                     const msg = res.data && res.data.message;
                     if (msg === 'limit_reached') {
@@ -523,32 +523,49 @@
             });
         },
 
-        finishGeneration(fullText, keyword) {
+        finishGeneration(fullText, keyword, serverMeta) {
             let articleHtml = fullText.trim();
             let meta = {};
 
-            // 1. Extract JSON — handle both fenced (```json...```) and raw ({...}) output
-            const jsonFenceIdx = articleHtml.lastIndexOf('```json');
-            if (jsonFenceIdx !== -1) {
-                const jsonBodyStart = jsonFenceIdx + 7;
-                const closingIdx    = articleHtml.indexOf('```', jsonBodyStart);
-                if (closingIdx !== -1) {
-                    try {
-                        meta = JSON.parse(articleHtml.substring(jsonBodyStart, closingIdx).trim());
-                    } catch (e) {}
+            if (serverMeta && typeof serverMeta === 'object' && Object.keys(serverMeta).length > 0) {
+                // Server extracted metadata via a dedicated second AI call — use it directly.
+                meta = serverMeta;
+                // Still strip any ```json block from the text so it doesn't land in article content.
+                const jsonFenceIdx = articleHtml.lastIndexOf('```json');
+                if (jsonFenceIdx !== -1) {
+                    articleHtml = articleHtml.substring(0, jsonFenceIdx).trim();
                 }
-                articleHtml = articleHtml.substring(0, jsonFenceIdx).trim();
             } else {
-                const rawJsonMatch = articleHtml.match(/\n(\{[\s\S]*\})\s*$/);
-                if (rawJsonMatch) {
-                    try {
-                        meta = JSON.parse(rawJsonMatch[1]);
-                        articleHtml = articleHtml.substring(0, articleHtml.length - rawJsonMatch[0].length).trim();
-                    } catch (e) {}
+                // Fallback: parse JSON from the text response (```json block or brace-counting).
+                const jsonFenceIdx = articleHtml.lastIndexOf('```json');
+                if (jsonFenceIdx !== -1) {
+                    const jsonBodyStart = jsonFenceIdx + 7;
+                    const closingIdx    = articleHtml.indexOf('```', jsonBodyStart);
+                    if (closingIdx !== -1) {
+                        try { meta = JSON.parse(articleHtml.substring(jsonBodyStart, closingIdx).trim()); } catch (e) {}
+                    }
+                    articleHtml = articleHtml.substring(0, jsonFenceIdx).trim();
+                } else {
+                    const lastClose = articleHtml.lastIndexOf('}');
+                    if (lastClose !== -1) {
+                        let depth = 0, jsonStart = -1;
+                        for (let i = lastClose; i >= 0; i--) {
+                            if      (articleHtml[i] === '}') depth++;
+                            else if (articleHtml[i] === '{') { depth--; if (depth === 0) { jsonStart = i; break; } }
+                        }
+                        if (jsonStart !== -1) {
+                            try {
+                                meta = JSON.parse(articleHtml.substring(jsonStart, lastClose + 1));
+                            } catch (e) {
+                                console.warn('[Wordvane] JSON parse failed:', e.message);
+                            }
+                            articleHtml = articleHtml.substring(0, jsonStart).trim();
+                        }
+                    }
                 }
             }
 
-            // 2. Strip ```html...``` wrapper if present
+            // Strip ```html...``` or ``` wrapper if the model used one.
             if (articleHtml.startsWith('```html')) {
                 const end = articleHtml.lastIndexOf('```', articleHtml.length - 1);
                 articleHtml = articleHtml.substring(7, end > 7 ? end : undefined).trim();
@@ -583,10 +600,10 @@
 
         updateSEOScore(html, meta, keyword) {
             const lowerHtml   = html.toLowerCase();
-            const lowerKw     = (keyword || '').toLowerCase();
+            const lowerKw     = (keyword || '').trim().toLowerCase();
             const titleText   = ($('#wv-post-title').val() || '').toLowerCase();
-            const firstPMatch = html.match(/<p[^>]*>(.*?)<\/p>/i);
-            const firstPText  = firstPMatch ? firstPMatch[1].toLowerCase() : '';
+            const firstPMatch = html.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
+            const firstPText  = firstPMatch ? firstPMatch[1].replace(/<[^>]+>/g, ' ').toLowerCase() : '';
             const wordCount   = html.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(w => w.length > 0).length;
 
             const checks = wvAdmin.strings.seo_checks;
