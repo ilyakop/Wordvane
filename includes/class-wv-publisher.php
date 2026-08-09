@@ -184,7 +184,7 @@ class Wordvane_Publisher {
 
 			case 'table':
 				$outer = $dom->saveHTML( $node );
-				return "<!-- wp:table -->\n<figure class=\"wp-block-table\">{$outer}</figure>\n<!-- /wp:table -->\n\n";
+				return "<!-- wp:html -->\n{$outer}\n<!-- /wp:html -->\n\n";
 
 			case 'blockquote':
 				$inner = trim( $inner );
