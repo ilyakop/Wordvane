@@ -182,6 +182,31 @@ class Wordvane_Publisher {
 			case 'ol':
 				return $this->list_to_block( $dom, $node, true );
 
+			case 'table':
+				$outer = $dom->saveHTML( $node );
+				return "<!-- wp:table -->\n<figure class=\"wp-block-table\">{$outer}</figure>\n<!-- /wp:table -->\n\n";
+
+			case 'blockquote':
+				$inner = trim( $inner );
+				if ( '' === $inner ) {
+					return '';
+				}
+				return "<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\">{$inner}</blockquote>\n<!-- /wp:quote -->\n\n";
+
+			// Transparent wrappers — the AI sometimes wraps the whole article in <article>
+			// or uses <div>/<section> for grouping. Process their children as top-level blocks.
+			case 'article':
+			case 'section':
+			case 'div':
+				$output = '';
+				foreach ( $node->childNodes as $child ) {
+					if ( XML_ELEMENT_NODE !== $child->nodeType ) {
+						continue;
+					}
+					$output .= $this->node_to_block( $dom, $child );
+				}
+				return $output;
+
 			default:
 				return '';
 		}
