@@ -172,7 +172,7 @@ $pro_post_type_labels = [
 				</a>
 				<?php endif; ?>
 				<?php if ( ! $ai_provider_ok ) : ?>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=connectors' ) ); ?>" class="button <?php echo $wp_version_ok ? 'button-primary' : 'button-secondary'; ?>">
+				<a href="<?php echo esc_url( admin_url( 'options-connectors.php' ) ); ?>" class="button <?php echo $wp_version_ok ? 'button-primary' : 'button-secondary'; ?>">
 					<?php esc_html_e( 'Set Up AI Provider →', 'wordvane' ); ?>
 				</a>
 				<?php endif; ?>
