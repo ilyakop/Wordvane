@@ -6,11 +6,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Wordvane_Generator {
 
 	public function __construct() {
-		add_action( 'wp_ajax_wv_generate', [ $this, 'ajax_generate' ] );
+		add_action( 'wp_ajax_wordvane_generate', [ $this, 'ajax_generate' ] );
 	}
 
 	public function ajax_generate() {
-		check_ajax_referer( 'wv_nonce', 'nonce' );
+		check_ajax_referer( 'wordvane_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_send_json_error( [ 'message' => 'Unauthorized' ] );
@@ -22,7 +22,7 @@ class Wordvane_Generator {
 			return;
 		}
 
-		$settings = get_option( 'wv_settings', [] );
+		$settings = get_option( 'wordvane_settings', [] );
 
 		$keyword             = sanitize_text_field( wp_unslash( $_POST['keyword'] ?? '' ) );
 		$secondary_keywords  = sanitize_text_field( wp_unslash( $_POST['secondary_keywords'] ?? '' ) );
@@ -128,7 +128,7 @@ class Wordvane_Generator {
 			return;
 		}
 
-		$wv_month_key = 'wv_article_count_' . gmdate( 'Y' ) . '_' . gmdate( 'm' );
+		$wv_month_key = 'wordvane_article_count_' . gmdate( 'Y' ) . '_' . gmdate( 'm' );
 		update_option( $wv_month_key, (int) get_option( $wv_month_key, 0 ) + 1 );
 
 		/**

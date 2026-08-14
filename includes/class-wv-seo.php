@@ -25,7 +25,7 @@ class Wordvane_SEO {
 	}
 
 	public static function apply_seo_meta( $post_id, $meta_title, $meta_description, $target_keyword, $faq_schema = [] ) {
-		$settings   = get_option( 'wv_settings', [] );
+		$settings   = get_option( 'wordvane_settings', [] );
 		$seo_plugin = $settings['seo_plugin'] ?? 'none';
 
 		switch ( $seo_plugin ) {
@@ -59,7 +59,7 @@ class Wordvane_SEO {
 			return;
 		}
 
-		$settings   = get_option( 'wv_settings', [] );
+		$settings   = get_option( 'wordvane_settings', [] );
 		$seo_plugin = $settings['seo_plugin'] ?? 'none';
 		if ( 'none' !== $seo_plugin ) {
 			return;

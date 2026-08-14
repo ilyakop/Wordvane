@@ -214,7 +214,7 @@
             $('#wv-wizard-saving').show();
 
             $.post(wvAdmin.ajaxurl, {
-                action: 'wv_save_wizard',
+                action: 'wordvane_save_wizard',
                 nonce: wvAdmin.nonce,
                 settings: JSON.stringify(this.wizardData)
             }).done(function(res) {
@@ -298,7 +298,7 @@
 
         saveDNA() {
             const data = {
-                action: 'wv_save_settings',
+                action: 'wordvane_save_settings',
                 nonce: wvAdmin.nonce,
                 business_type: $('#wv-settings-business-type').val(),
                 business_name: $('#wv-s-business-name').val(),
@@ -327,7 +327,7 @@
 
         savePublishing() {
             const data = {
-                action: 'wv_save_settings',
+                action: 'wordvane_save_settings',
                 nonce: wvAdmin.nonce,
                 seo_plugin: $('input[name="wv_s_seo_plugin"]:checked').val(),
                 post_status: $('input[name="wv_s_post_status"]:checked').val(),
@@ -404,7 +404,7 @@
                 const $widget = $(this).closest('#wv-insights-upgrade-widget, #wv-settings-compare-card, #wv-limit-reached-box');
                 $widget.fadeOut(200);
                 $.post(wvAdmin.ajaxurl, {
-                    action: 'wv_dismiss_upsell',
+                    action: 'wordvane_dismiss_upsell',
                     nonce:  wvAdmin.nonce,
                     key:    key
                 });
@@ -423,7 +423,7 @@
 
             // Pre-fill keyword from wizard
             const params = new URLSearchParams(window.location.search);
-            const suggestedKeyword = params.get('wv_keyword');
+            const suggestedKeyword = params.get('wordvane_keyword');
             if (suggestedKeyword) {
                 $('#wv-keyword').val(decodeURIComponent(suggestedKeyword));
             }
@@ -495,7 +495,7 @@
             $.ajax({
                 url: wvAdmin.ajaxurl,
                 method: 'POST',
-                data: { action: 'wv_generate', nonce: wvAdmin.nonce, ...data },
+                data: { action: 'wordvane_generate', nonce: wvAdmin.nonce, ...data },
                 timeout: 120000
             }).done((res) => {
                 if (res.success) {
@@ -671,7 +671,7 @@
             const postId = parseInt($('#wv-post-id').val() || '0');
 
             const data = {
-                action:           'wv_publish_post',
+                action:           'wordvane_publish_post',
                 nonce:            wvAdmin.nonce,
                 post_title:       $('#wv-post-title').val(),
                 post_content:     this.currentHtml,
@@ -768,7 +768,7 @@
                 $('.wv-checklist-fill').css('width', pct + '%');
 
                 $.post(wvAdmin.ajaxurl, {
-                    action: 'wv_save_checklist',
+                    action: 'wordvane_save_checklist',
                     nonce: wvAdmin.nonce,
                     checklist: checked
                 });

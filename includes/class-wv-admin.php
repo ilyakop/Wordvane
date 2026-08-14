@@ -9,11 +9,11 @@ class Wordvane_Admin {
 		add_action( 'admin_menu', [ $this, 'register_menus' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 
-		add_action( 'wp_ajax_wv_save_wizard',    [ $this, 'ajax_save_wizard' ] );
-		add_action( 'wp_ajax_wv_save_settings',  [ $this, 'ajax_save_settings' ] );
-		add_action( 'wp_ajax_wv_save_checklist', [ $this, 'ajax_save_checklist' ] );
-		add_action( 'wp_ajax_wv_suggest_keyword', [ $this, 'ajax_suggest_keyword' ] );
-		add_action( 'wp_ajax_wv_dismiss_upsell', [ $this, 'ajax_dismiss_upsell' ] );
+		add_action( 'wp_ajax_wordvane_save_wizard',    [ $this, 'ajax_save_wizard' ] );
+		add_action( 'wp_ajax_wordvane_save_settings',  [ $this, 'ajax_save_settings' ] );
+		add_action( 'wp_ajax_wordvane_save_checklist', [ $this, 'ajax_save_checklist' ] );
+		add_action( 'wp_ajax_wordvane_suggest_keyword', [ $this, 'ajax_suggest_keyword' ] );
+		add_action( 'wp_ajax_wordvane_dismiss_upsell', [ $this, 'ajax_dismiss_upsell' ] );
 	}
 
 	public function register_menus() {
@@ -103,7 +103,7 @@ class Wordvane_Admin {
 			true
 		);
 
-		$settings = get_option( 'wv_settings', [] );
+		$settings = get_option( 'wordvane_settings', [] );
 		$is_pro   = Wordvane_Features::is_pro();
 
 		$fs              = function_exists( 'wordvane_fs' ) ? wordvane_fs() : null;
@@ -115,10 +115,10 @@ class Wordvane_Admin {
 
 		wp_localize_script( 'wv-admin', 'wvAdmin', [
 			'ajaxurl'        => admin_url( 'admin-ajax.php' ),
-			'nonce'          => wp_create_nonce( 'wv_nonce' ),
-			'wizardComplete' => (bool) get_option( 'wv_wizard_complete' ),
+			'nonce'          => wp_create_nonce( 'wordvane_nonce' ),
+			'wizardComplete' => (bool) get_option( 'wordvane_wizard_complete' ),
 			'products'       => $settings['products'] ?? [],
-			'checklist'      => get_user_meta( get_current_user_id(), 'wv_checklist', true ) ?: [],
+			'checklist'      => get_user_meta( get_current_user_id(), 'wordvane_checklist', true ) ?: [],
 			'isPro'          => $is_pro,
 			'upgradeUrl'     => Wordvane_Features::get_upgrade_url(),
 			'trialUrl'       => $trial_url,
@@ -174,7 +174,7 @@ class Wordvane_Admin {
 	}
 
 	public function ajax_save_wizard() {
-		check_ajax_referer( 'wv_nonce', 'nonce' );
+		check_ajax_referer( 'wordvane_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( [ 'message' => 'Unauthorized' ] );
@@ -191,8 +191,8 @@ class Wordvane_Admin {
 		}
 
 		$settings = $this->sanitize_settings( $data );
-		update_option( 'wv_settings', $settings );
-		update_option( 'wv_wizard_complete', true );
+		update_option( 'wordvane_settings', $settings );
+		update_option( 'wordvane_wizard_complete', true );
 
 		$suggested_keyword = Wordvane_Generator::suggest_keyword(
 			$settings['business_type'] ?? '',
@@ -200,28 +200,28 @@ class Wordvane_Admin {
 		);
 
 		wp_send_json_success( [
-			'redirect'          => admin_url( 'admin.php?page=wv-generator&wv_welcome=1' ),
+			'redirect'          => admin_url( 'admin.php?page=wv-generator&wordvane_welcome=1' ),
 			'suggested_keyword' => $suggested_keyword,
 		] );
 	}
 
 	public function ajax_save_settings() {
-		check_ajax_referer( 'wv_nonce', 'nonce' );
+		check_ajax_referer( 'wordvane_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( [ 'message' => 'Unauthorized' ] );
 			return;
 		}
 
-		$existing = get_option( 'wv_settings', [] );
+		$existing = get_option( 'wordvane_settings', [] );
 		$settings = $this->sanitize_settings( $_POST );
 
-		update_option( 'wv_settings', array_merge( $existing, $settings ) );
+		update_option( 'wordvane_settings', array_merge( $existing, $settings ) );
 		wp_send_json_success( [ 'message' => 'saved' ] );
 	}
 
 	public function ajax_save_checklist() {
-		check_ajax_referer( 'wv_nonce', 'nonce' );
+		check_ajax_referer( 'wordvane_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_send_json_error( [ 'message' => 'Unauthorized' ] );
@@ -229,19 +229,19 @@ class Wordvane_Admin {
 		}
 
 		$checklist = array_map( 'absint', (array) wp_unslash( $_POST['checklist'] ?? [] ) );
-		update_user_meta( get_current_user_id(), 'wv_checklist', $checklist );
+		update_user_meta( get_current_user_id(), 'wordvane_checklist', $checklist );
 		wp_send_json_success();
 	}
 
 	public function ajax_suggest_keyword() {
-		check_ajax_referer( 'wv_nonce', 'nonce' );
+		check_ajax_referer( 'wordvane_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_send_json_error( [ 'message' => 'Unauthorized' ] );
 			return;
 		}
 
-		$settings = get_option( 'wv_settings', [] );
+		$settings = get_option( 'wordvane_settings', [] );
 		$keyword  = Wordvane_Generator::suggest_keyword(
 			$settings['business_type'] ?? '',
 			$settings['what_they_sell'] ?? ''
@@ -251,7 +251,7 @@ class Wordvane_Admin {
 	}
 
 	public function ajax_dismiss_upsell() {
-		check_ajax_referer( 'wv_nonce', 'nonce' );
+		check_ajax_referer( 'wordvane_nonce', 'nonce' );
 
 		if ( ! is_user_logged_in() ) {
 			wp_send_json_error();
@@ -264,7 +264,7 @@ class Wordvane_Admin {
 			wp_send_json_error( [ 'message' => 'Invalid key.' ] );
 		}
 
-		update_user_meta( get_current_user_id(), 'wv_dismissed_' . $key, 1 );
+		update_user_meta( get_current_user_id(), 'wordvane_dismissed_' . $key, 1 );
 		wp_send_json_success();
 	}
 

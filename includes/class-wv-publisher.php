@@ -6,11 +6,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Wordvane_Publisher {
 
 	public function __construct() {
-		add_action( 'wp_ajax_wv_publish_post', [ $this, 'ajax_publish_post' ] );
+		add_action( 'wp_ajax_wordvane_publish_post', [ $this, 'ajax_publish_post' ] );
 	}
 
 	public function ajax_publish_post() {
-		check_ajax_referer( 'wv_nonce', 'nonce' );
+		check_ajax_referer( 'wordvane_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'publish_posts' ) ) {
 			wp_send_json_error( [ 'message' => 'Unauthorized' ] );
@@ -57,8 +57,8 @@ class Wordvane_Publisher {
 		/**
 		 * Filters the post types available for Wordvane-published content.
 		 *
-		 * Free tier allows 'post' only. Pro can add 'page', 'product' (WooCommerce),
-		 * and any registered custom post type.
+		 * Defaults to 'post'. Third-party plugins or custom code may add any
+		 * registered post type by filtering this array.
 		 *
 		 * @since 1.0.0
 		 * @hook  wordvane_publisher_post_types

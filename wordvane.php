@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Wordvane
- * Plugin URI: https://topdevs.net/wordvane
+ * Plugin URI: https://wordvane.com
  * Description: AI-powered SEO article generator for WordPress. Create keyword-optimized content using the WordPress AI Client and publish directly to your site.
  * Version: 1.0.0
  * Author: TopDevs
@@ -32,24 +32,24 @@ require_once WORDVANE_PLUGIN_DIR . 'includes/wv-pro-features-list.php';
 
 register_activation_hook( __FILE__, 'wordvane_activate' );
 function wordvane_activate() {
-	if ( ! get_option( 'wv_activated' ) ) {
-		update_option( 'wv_activated', '1' );
-		update_option( 'wv_wizard_complete', false );
-		set_transient( 'wv_activation_redirect', true, 30 );
+	if ( ! get_option( 'wordvane_activated' ) ) {
+		update_option( 'wordvane_activated', '1' );
+		update_option( 'wordvane_wizard_complete', false );
+		set_transient( 'wordvane_activation_redirect', true, 30 );
 	}
 }
 
 register_deactivation_hook( __FILE__, 'wordvane_deactivate' );
 function wordvane_deactivate() {
-	wp_clear_scheduled_hook( 'wv_monthly_reset' ); // clean up legacy cron from earlier versions
+	wp_clear_scheduled_hook( 'wordvane_monthly_reset' ); // clean up legacy cron from earlier versions
 }
 
 add_action( 'admin_init', 'wordvane_activation_redirect' );
 function wordvane_activation_redirect() {
-	if ( ! get_transient( 'wv_activation_redirect' ) ) {
+	if ( ! get_transient( 'wordvane_activation_redirect' ) ) {
 		return;
 	}
-	delete_transient( 'wv_activation_redirect' );
+	delete_transient( 'wordvane_activation_redirect' );
 	// When Freemius is active it owns the post-activation redirect:
 	// - New installs:    opt-in screen → after_connect/skip_url filters below → wizard
 	// - Returning users: first-path in menu config → wizard (while not yet complete)
@@ -58,7 +58,7 @@ function wordvane_activation_redirect() {
 	if ( $fs ) {
 		return;
 	}
-	if ( ! get_option( 'wv_wizard_complete' ) ) {
+	if ( ! get_option( 'wordvane_wizard_complete' ) ) {
 		wp_safe_redirect( admin_url( 'admin.php?page=wv-wizard' ) );
 		exit;
 	}
@@ -108,7 +108,7 @@ function wordvane_ai_provider_notice() {
 // Registered before do_action('wordvane_fs_loaded') fires inside the block below.
 add_action( 'wordvane_fs_loaded', static function() {
 	$fs = wordvane_fs();
-	if ( ! $fs || get_option( 'wv_wizard_complete' ) ) {
+	if ( ! $fs || get_option( 'wordvane_wizard_complete' ) ) {
 		return;
 	}
 	$wizard_url = admin_url( 'admin.php?page=wv-wizard' );
@@ -154,7 +154,7 @@ if ( ! function_exists( 'wordvane_fs' ) ) {
 					'support'    => false,
 					// For returning users (already registered, no opt-in shown): redirect to
 					// wizard on first activation if setup isn't complete yet.
-					'first-path' => get_option( 'wv_wizard_complete' ) ? false : 'admin.php?page=wv-wizard',
+					'first-path' => get_option( 'wordvane_wizard_complete' ) ? false : 'admin.php?page=wv-wizard',
 				),
 			) );
 		}
@@ -181,7 +181,7 @@ add_filter( 'wordvane_upgrade_url', static function() {
 		return admin_url( 'admin.php?page=wv-settings&tab=license' );
 	}
 	$fs = wordvane_fs();
-	return $fs ? $fs->get_upgrade_url() : 'https://topdevs.net/wordvane-pro';
+	return $fs ? $fs->get_upgrade_url() : 'https://wordvane.com/pro';
 } );
 
 // ---------------------------------------------------------------------------
@@ -207,13 +207,13 @@ function wordvane_render_insights_upgrade_widget() {
 	if ( Wordvane_Features::is_pro() ) {
 		return;
 	}
-	if ( get_user_meta( get_current_user_id(), 'wv_dismissed_insights_upgrade', true ) ) {
+	if ( get_user_meta( get_current_user_id(), 'wordvane_dismissed_insights_upgrade', true ) ) {
 		return;
 	}
 
 	$total_generated = 0;
 	for ( $m = 1; $m <= 12; $m++ ) {
-		$total_generated += (int) get_option( 'wv_article_count_' . gmdate( 'Y' ) . '_' . gmdate( 'm', gmmktime( 0, 0, 0, $m, 1 ) ), 0 );
+		$total_generated += (int) get_option( 'wordvane_article_count_' . gmdate( 'Y' ) . '_' . gmdate( 'm', gmmktime( 0, 0, 0, $m, 1 ) ), 0 );
 	}
 
 	$fs              = function_exists( 'wordvane_fs' ) ? wordvane_fs() : null;

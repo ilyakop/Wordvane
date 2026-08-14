@@ -9,9 +9,9 @@ if ( ! current_user_can( 'edit_posts' ) ) {
 
 $total_generated = 0;
 for ( $m = 1; $m <= 12; $m++ ) {
-	$total_generated += (int) get_option( 'wv_article_count_' . gmdate( 'Y' ) . '_' . gmdate( 'm', gmmktime( 0, 0, 0, $m, 1 ) ), 0 );
+	$total_generated += (int) get_option( 'wordvane_article_count_' . gmdate( 'Y' ) . '_' . gmdate( 'm', gmmktime( 0, 0, 0, $m, 1 ) ), 0 );
 }
-$total_generated += (int) get_option( 'wv_article_count_' . ( (int) gmdate( 'Y' ) - 1 ) . '_12', 0 );
+$total_generated += (int) get_option( 'wordvane_article_count_' . ( (int) gmdate( 'Y' ) - 1 ) . '_12', 0 );
 
 $query_30 = new WP_Query( [
 	'post_type'      => 'post',
@@ -34,7 +34,7 @@ $query_month = new WP_Query( [
 ] );
 $published_this_month = $query_month->found_posts;
 
-$checklist = get_user_meta( get_current_user_id(), 'wv_checklist', true );
+$checklist = get_user_meta( get_current_user_id(), 'wordvane_checklist', true );
 $checklist = is_array( $checklist ) ? $checklist : [];
 
 if ( $avg_per_week >= 4 ) {

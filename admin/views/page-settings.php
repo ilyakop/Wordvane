@@ -8,7 +8,7 @@ if ( ! current_user_can( 'manage_options' ) ) {
 	wp_die( esc_html__( 'Unauthorized', 'wordvane' ) );
 }
 
-$settings    = get_option( 'wv_settings', [] );
+$settings    = get_option( 'wordvane_settings', [] );
 $is_pro      = Wordvane_Features::is_pro();
 $upgrade_url = Wordvane_Features::get_upgrade_url();
 $categories  = get_categories( [ 'hide_empty' => false ] );
@@ -313,7 +313,7 @@ $allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 	</div>
 	<?php endif; ?>
 
-	<?php if ( ! $is_pro && ! get_user_meta( get_current_user_id(), 'wv_dismissed_settings_comparison', true ) ) : ?>
+	<?php if ( ! $is_pro && ! get_user_meta( get_current_user_id(), 'wordvane_dismissed_settings_comparison', true ) ) : ?>
 	<div class="wv-card wv-plan-compare-card" id="wv-settings-compare-card">
 		<button type="button"
 			class="wv-dismiss-btn"

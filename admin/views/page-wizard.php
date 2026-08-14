@@ -8,7 +8,7 @@ if ( ! current_user_can( 'manage_options' ) ) {
 	wp_die( esc_html__( 'Unauthorized', 'wordvane' ) );
 }
 
-$settings = get_option( 'wv_settings', [] );
+$settings = get_option( 'wordvane_settings', [] );
 ?>
 <div class="wv-wizard-wrap">
 	<div class="wv-wizard-header">

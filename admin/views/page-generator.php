@@ -9,12 +9,12 @@ if ( ! current_user_can( 'edit_posts' ) ) {
 }
 
 global $wp_version;
-$settings         = get_option( 'wv_settings', [] );
+$settings         = get_option( 'wordvane_settings', [] );
 $products         = $settings['products'] ?? [];
-$month_key        = 'wv_article_count_' . gmdate( 'Y' ) . '_' . gmdate( 'm' );
+$month_key        = 'wordvane_article_count_' . gmdate( 'Y' ) . '_' . gmdate( 'm' );
 $usage_this_month = (int) get_option( $month_key, 0 );
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only nav flag set by our own redirect, not a form submission.
-$show_welcome     = isset( $_GET['wv_welcome'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['wv_welcome'] ) );
+$show_welcome     = isset( $_GET['wordvane_welcome'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['wordvane_welcome'] ) );
 $categories       = get_categories( [ 'hide_empty' => false ] );
 $is_pro           = Wordvane_Features::is_pro();
 $upgrade_url      = Wordvane_Features::get_upgrade_url();
@@ -112,12 +112,8 @@ $trial_available = $fs
 	&& method_exists( $fs, 'get_trial_url' );
 $trial_url       = $trial_available ? $fs->get_trial_url() : null;
 
-// Publisher post types
+// Publisher post types — extensible via filter; defaults to 'post' only.
 $publisher_post_types = apply_filters( 'wordvane_publisher_post_types', [ 'post' ] );
-$pro_post_type_labels = [
-	'page'    => __( 'Page', 'wordvane' ),
-	'product' => __( 'WooCommerce Product', 'wordvane' ),
-];
 ?>
 <div class="wrap wv-generator-page">
 	<h1 class="wp-heading-inline"><?php esc_html_e( 'Generate Article', 'wordvane' ); ?></h1>
@@ -393,20 +389,13 @@ $pro_post_type_labels = [
 									<label class="wv-label" for="wv-post-type"><?php esc_html_e( 'Post Type', 'wordvane' ); ?></label>
 									<select id="wv-post-type">
 										<option value="post"><?php esc_html_e( 'Post', 'wordvane' ); ?></option>
-										<?php if ( $is_pro ) : ?>
-											<?php foreach ( $publisher_post_types as $pt ) :
-												if ( 'post' === $pt ) continue;
-												$pt_label = $pro_post_type_labels[ $pt ] ?? ucfirst( $pt );
-											?>
-											<option value="<?php echo esc_attr( $pt ); ?>"><?php echo esc_html( $pt_label ); ?></option>
-											<?php endforeach; ?>
-										<?php else : ?>
-											<?php foreach ( $pro_post_type_labels as $pt => $pt_label ) : ?>
-											<option value="<?php echo esc_attr( $pt ); ?>" disabled>
-												<?php echo esc_html( $pt_label . ' — ' . __( 'Pro', 'wordvane' ) ); ?>
-											</option>
-											<?php endforeach; ?>
-										<?php endif; ?>
+										<?php foreach ( $publisher_post_types as $pt ) :
+											if ( 'post' === $pt ) continue;
+											$pt_obj = get_post_type_object( $pt );
+											$pt_label = $pt_obj ? $pt_obj->labels->singular_name : ucfirst( $pt );
+										?>
+										<option value="<?php echo esc_attr( $pt ); ?>"><?php echo esc_html( $pt_label ); ?></option>
+										<?php endforeach; ?>
 									</select>
 								</div>
 
