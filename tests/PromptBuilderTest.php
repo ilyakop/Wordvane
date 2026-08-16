@@ -2,6 +2,10 @@
 
 use PHPUnit\Framework\TestCase;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Tests that Wordvane_Prompt_Builder produces correct prompts for all three
  * Featured Product modes, and that "No product mention" fully suppresses brand
@@ -9,7 +13,7 @@ use PHPUnit\Framework\TestCase;
  *
  * Run: vendor/bin/phpunit
  */
-class PromptBuilderTest extends TestCase {
+class Wordvane_PromptBuilderTest extends TestCase {
 
 	/** Business DNA with a distinctive brand name unlikely to appear by coincidence. */
 	private array $dna;

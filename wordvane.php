@@ -59,7 +59,7 @@ function wordvane_activation_redirect() {
 		return;
 	}
 	if ( ! get_option( 'wordvane_wizard_complete' ) ) {
-		wp_safe_redirect( admin_url( 'admin.php?page=wv-wizard' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=wordvane-wizard' ) );
 		exit;
 	}
 }
@@ -87,10 +87,10 @@ function wordvane_ai_provider_notice() {
 		return;
 	}
 	$wv_screens = [
-		'toplevel_page_wv-generator',
-		'wordvane_page_wv-insights',
-		'wordvane_page_wv-settings',
-		'admin_page_wv-wizard',
+		'toplevel_page_wordvane-generator',
+		'wordvane_page_wordvane-insights',
+		'wordvane_page_wordvane-settings',
+		'admin_page_wordvane-wizard',
 	];
 	if ( ! in_array( $screen->id, $wv_screens, true ) ) {
 		return;
@@ -111,7 +111,7 @@ add_action( 'wordvane_fs_loaded', static function() {
 	if ( ! $fs || get_option( 'wordvane_wizard_complete' ) ) {
 		return;
 	}
-	$wizard_url = admin_url( 'admin.php?page=wv-wizard' );
+	$wizard_url = admin_url( 'admin.php?page=wordvane-wizard' );
 	$to_wizard  = static function() use ( $wizard_url ) {
 		return $wizard_url;
 	};
@@ -148,13 +148,13 @@ if ( ! function_exists( 'wordvane_fs' ) ) {
 					'is_require_payment' => true,
 				),
 				'menu'                => array(
-					'slug'       => 'wv-generator',
+					'slug'       => 'wordvane-generator',
 					'account'    => true,
 					'contact'    => false,
 					'support'    => false,
 					// For returning users (already registered, no opt-in shown): redirect to
 					// wizard on first activation if setup isn't complete yet.
-					'first-path' => get_option( 'wordvane_wizard_complete' ) ? false : 'admin.php?page=wv-wizard',
+					'first-path' => get_option( 'wordvane_wizard_complete' ) ? false : 'admin.php?page=wordvane-wizard',
 				),
 			) );
 		}
@@ -178,7 +178,7 @@ add_filter( 'wordvane_is_pro', static function() {
 //   3. Pro plugin active + licensed   → irrelevant (no upsells shown)
 add_filter( 'wordvane_upgrade_url', static function() {
 	if ( class_exists( 'WVP_License' ) && ! WVP_License::is_active() ) {
-		return admin_url( 'admin.php?page=wv-settings&tab=license' );
+		return admin_url( 'admin.php?page=wordvane-settings&tab=license' );
 	}
 	$fs = wordvane_fs();
 	return $fs ? $fs->get_upgrade_url() : 'https://wordvane.com/pro';

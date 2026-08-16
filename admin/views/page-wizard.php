@@ -15,7 +15,7 @@ $settings = get_option( 'wordvane_settings', [] );
 		<div class="wv-wizard-logo">
 			<strong>Wordvane</strong>
 		</div>
-		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wv-generator' ) ); ?>" class="wv-wizard-skip">
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wordvane-generator' ) ); ?>" class="wv-wizard-skip">
 			<?php esc_html_e( 'Skip setup — I will do this later', 'wordvane' ); ?>
 		</a>
 	</div>

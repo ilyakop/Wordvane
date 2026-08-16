@@ -6,6 +6,13 @@
  * just the ABSPATH guard and load the class directly.
  */
 
-define( 'ABSPATH', '' );
+// Block direct browser access; allow CLI (PHPUnit) and WordPress contexts.
+if ( PHP_SAPI !== 'cli' && ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+if ( ! defined( 'ABSPATH' ) ) {
+	define( 'ABSPATH', '' );
+}
 
 require_once dirname( __DIR__ ) . '/includes/class-wv-prompt-builder.php';

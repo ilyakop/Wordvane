@@ -1,5 +1,5 @@
 /* Wordvane — Admin JS */
-/* global wvAdmin, jQuery */
+/* global wordvaneAdmin, jQuery */
 
 (function($) {
     'use strict';
@@ -146,7 +146,7 @@
         validateStep(step) {
             if (step === 1) {
                 if (!this.wizardData.business_type) {
-                    this.showStepError(1, wvAdmin.strings.business_type_required);
+                    this.showStepError(1, wordvaneAdmin.strings.business_type_required);
                     return false;
                 }
             }
@@ -161,7 +161,7 @@
                     }
                 });
                 if (!valid) {
-                    this.showStepError(2, wvAdmin.strings.required_fields);
+                    this.showStepError(2, wordvaneAdmin.strings.required_fields);
                     return false;
                 }
             }
@@ -197,11 +197,11 @@
             const $row = $('<div class="wv-product-row">');
             const $fields = $('<div class="wv-product-fields">');
             $fields.append(
-                $('<input type="text" class="regular-text wv-product-name">').attr('placeholder', wvAdmin.strings.placeholder_product_name),
-                $('<input type="url" class="regular-text wv-product-url">').attr('placeholder', wvAdmin.strings.placeholder_product_url),
-                $('<input type="text" class="regular-text wv-product-desc">').attr('placeholder', wvAdmin.strings.placeholder_product_desc)
+                $('<input type="text" class="regular-text wv-product-name">').attr('placeholder', wordvaneAdmin.strings.placeholder_product_name),
+                $('<input type="url" class="regular-text wv-product-url">').attr('placeholder', wordvaneAdmin.strings.placeholder_product_url),
+                $('<input type="text" class="regular-text wv-product-desc">').attr('placeholder', wordvaneAdmin.strings.placeholder_product_desc)
             );
-            $row.append($fields, $('<button type="button" class="button wv-remove-product">').text(wvAdmin.strings.remove));
+            $row.append($fields, $('<button type="button" class="button wv-remove-product">').text(wordvaneAdmin.strings.remove));
             $('#wv-products-repeater').append($row);
             if ($('.wv-product-row').length >= 3) {
                 $('#wv-add-product').hide();
@@ -213,9 +213,9 @@
             $('#wv-complete-wizard').prop('disabled', true);
             $('#wv-wizard-saving').show();
 
-            $.post(wvAdmin.ajaxurl, {
+            $.post(wordvaneAdmin.ajaxurl, {
                 action: 'wordvane_save_wizard',
-                nonce: wvAdmin.nonce,
+                nonce: wordvaneAdmin.nonce,
                 settings: JSON.stringify(this.wizardData)
             }).done(function(res) {
                 if (res.success) {
@@ -225,12 +225,12 @@
                     }
                     window.location.href = redirect;
                 } else {
-                    Wizard.showStepError(3, wvAdmin.strings.wizard_error);
+                    Wizard.showStepError(3, wordvaneAdmin.strings.wizard_error);
                     $('#wv-complete-wizard').prop('disabled', false);
                     $('#wv-wizard-saving').hide();
                 }
             }).fail(function() {
-                Wizard.showStepError(3, wvAdmin.strings.err_network);
+                Wizard.showStepError(3, wordvaneAdmin.strings.err_network);
                 $('#wv-complete-wizard').prop('disabled', false);
                 $('#wv-wizard-saving').hide();
             });
@@ -252,11 +252,11 @@
                 const $row = $('<div class="wv-product-row">');
                 const $fields = $('<div class="wv-product-fields">');
                 $fields.append(
-                    $('<input type="text" class="regular-text wv-product-name">').attr('placeholder', wvAdmin.strings.placeholder_product_name),
-                    $('<input type="url" class="regular-text wv-product-url">').attr('placeholder', wvAdmin.strings.placeholder_product_url),
-                    $('<input type="text" class="regular-text wv-product-desc">').attr('placeholder', wvAdmin.strings.placeholder_product_desc_short)
+                    $('<input type="text" class="regular-text wv-product-name">').attr('placeholder', wordvaneAdmin.strings.placeholder_product_name),
+                    $('<input type="url" class="regular-text wv-product-url">').attr('placeholder', wordvaneAdmin.strings.placeholder_product_url),
+                    $('<input type="text" class="regular-text wv-product-desc">').attr('placeholder', wordvaneAdmin.strings.placeholder_product_desc_short)
                 );
-                $row.append($fields, $('<button type="button" class="button wv-remove-product">').text(wvAdmin.strings.remove));
+                $row.append($fields, $('<button type="button" class="button wv-remove-product">').text(wordvaneAdmin.strings.remove));
                 $('#wv-products-repeater-settings').append($row);
                 if ($('#wv-products-repeater-settings .wv-product-row').length >= 3) {
                     $('#wv-add-product-settings').hide();
@@ -299,7 +299,7 @@
         saveDNA() {
             const data = {
                 action: 'wordvane_save_settings',
-                nonce: wvAdmin.nonce,
+                nonce: wordvaneAdmin.nonce,
                 business_type: $('#wv-settings-business-type').val(),
                 business_name: $('#wv-s-business-name').val(),
                 what_they_sell: $('#wv-s-what-they-sell').val(),
@@ -312,23 +312,23 @@
             };
 
             $('#wv-save-spinner').show();
-            $.post(wvAdmin.ajaxurl, data).done((res) => {
+            $.post(wordvaneAdmin.ajaxurl, data).done((res) => {
                 $('#wv-save-spinner').hide();
                 if (res.success) {
-                    this.showFeedback(wvAdmin.strings.saved, 'success');
+                    this.showFeedback(wordvaneAdmin.strings.saved, 'success');
                 } else {
-                    this.showFeedback(wvAdmin.strings.save_error, 'error');
+                    this.showFeedback(wordvaneAdmin.strings.save_error, 'error');
                 }
             }).fail(() => {
                 $('#wv-save-spinner').hide();
-                this.showFeedback(wvAdmin.strings.save_error, 'error');
+                this.showFeedback(wordvaneAdmin.strings.save_error, 'error');
             });
         },
 
         savePublishing() {
             const data = {
                 action: 'wordvane_save_settings',
-                nonce: wvAdmin.nonce,
+                nonce: wordvaneAdmin.nonce,
                 seo_plugin: $('input[name="wv_s_seo_plugin"]:checked').val(),
                 post_status: $('input[name="wv_s_post_status"]:checked').val(),
                 default_category: $('#wv-s-default-cat').val(),
@@ -336,16 +336,16 @@
             };
 
             $('#wv-save-spinner').show();
-            $.post(wvAdmin.ajaxurl, data).done((res) => {
+            $.post(wordvaneAdmin.ajaxurl, data).done((res) => {
                 $('#wv-save-spinner').hide();
                 if (res.success) {
-                    this.showFeedback(wvAdmin.strings.saved, 'success');
+                    this.showFeedback(wordvaneAdmin.strings.saved, 'success');
                 } else {
-                    this.showFeedback(wvAdmin.strings.save_error, 'error');
+                    this.showFeedback(wordvaneAdmin.strings.save_error, 'error');
                 }
             }).fail(() => {
                 $('#wv-save-spinner').hide();
-                this.showFeedback(wvAdmin.strings.save_error, 'error');
+                this.showFeedback(wordvaneAdmin.strings.save_error, 'error');
             });
         }
     };
@@ -403,9 +403,9 @@
                 const key = $(this).data('dismiss-key');
                 const $widget = $(this).closest('#wv-insights-upgrade-widget, #wv-settings-compare-card, #wv-limit-reached-box');
                 $widget.fadeOut(200);
-                $.post(wvAdmin.ajaxurl, {
+                $.post(wordvaneAdmin.ajaxurl, {
                     action: 'wordvane_dismiss_upsell',
-                    nonce:  wvAdmin.nonce,
+                    nonce:  wordvaneAdmin.nonce,
                     key:    key
                 });
             });
@@ -493,9 +493,9 @@
             $('#wv-publish-result').hide();
 
             $.ajax({
-                url: wvAdmin.ajaxurl,
+                url: wordvaneAdmin.ajaxurl,
                 method: 'POST',
-                data: { action: 'wordvane_generate', nonce: wvAdmin.nonce, ...data },
+                data: { action: 'wordvane_generate', nonce: wordvaneAdmin.nonce, ...data },
                 timeout: 120000
             }).done((res) => {
                 if (res.success) {
@@ -503,18 +503,18 @@
                 } else {
                     const msg = res.data && res.data.message;
                     if (msg === 'limit_reached') {
-                        this.showGenerationError(wvAdmin.strings.limit_reached);
+                        this.showGenerationError(wordvaneAdmin.strings.limit_reached);
                     } else if (msg === 'no_ai_provider') {
-                        this.showGenerationError(wvAdmin.strings.no_ai_provider);
+                        this.showGenerationError(wordvaneAdmin.strings.no_ai_provider);
                     } else {
-                        this.showGenerationError(wvAdmin.strings.err_generic + (msg || ''));
+                        this.showGenerationError(wordvaneAdmin.strings.err_generic + (msg || ''));
                     }
                 }
             }).fail((xhr, status) => {
                 if (status === 'timeout') {
-                    this.showGenerationError(wvAdmin.strings.timeout);
+                    this.showGenerationError(wordvaneAdmin.strings.timeout);
                 } else {
-                    this.showGenerationError(wvAdmin.strings.err_network);
+                    this.showGenerationError(wordvaneAdmin.strings.err_network);
                 }
             }).always(() => {
                 this.isGenerating = false;
@@ -606,7 +606,7 @@
             const firstPText  = firstPMatch ? firstPMatch[1].replace(/<[^>]+>/g, ' ').toLowerCase() : '';
             const wordCount   = html.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(w => w.length > 0).length;
 
-            const checks = wvAdmin.strings.seo_checks;
+            const checks = wordvaneAdmin.strings.seo_checks;
             const checkPasses = [
                 lowerKw && titleText.includes(lowerKw),
                 lowerKw && firstPText.includes(lowerKw),
@@ -637,19 +637,19 @@
 
             $('<div class="wv-seo-check-item">').append(
                 $('<span class="wv-seo-check-icon">').text('💡'),
-                $('<span>').text(wvAdmin.strings.internal_links_tip)
+                $('<span>').text(wordvaneAdmin.strings.internal_links_tip)
             ).appendTo($list);
 
             let grade, gradeClass, gradeTip;
             if (passCount >= 5) {
                 grade = 'A'; gradeClass = 'grade-a';
-                gradeTip = wvAdmin.strings.grade_a;
+                gradeTip = wordvaneAdmin.strings.grade_a;
             } else if (passCount >= 3) {
                 grade = 'B'; gradeClass = 'grade-b';
-                gradeTip = wvAdmin.strings.grade_b;
+                gradeTip = wordvaneAdmin.strings.grade_b;
             } else {
                 grade = 'C'; gradeClass = 'grade-c';
-                gradeTip = wvAdmin.strings.grade_c;
+                gradeTip = wordvaneAdmin.strings.grade_c;
             }
 
             $('#wv-grade-badge')
@@ -672,7 +672,7 @@
 
             const data = {
                 action:           'wordvane_publish_post',
-                nonce:            wvAdmin.nonce,
+                nonce:            wordvaneAdmin.nonce,
                 post_title:       $('#wv-post-title').val(),
                 post_content:     this.currentHtml,
                 post_status:      postStatus,
@@ -692,7 +692,7 @@
             $('#wv-publish-saving').show();
             $('#wv-save-draft, #wv-publish-now').prop('disabled', true);
 
-            $.post(wvAdmin.ajaxurl, data).done(function(res) {
+            $.post(wordvaneAdmin.ajaxurl, data).done(function(res) {
                 $('#wv-publish-saving').hide();
                 $('#wv-save-draft, #wv-publish-now').prop('disabled', false);
                 if (res.success) {
@@ -701,12 +701,12 @@
                     // Safe DOM construction — no HTML string concatenation (Bug-8)
                     const $msg = $('<span>').text(d.message + ' ');
                     const $editLink = $('<a>').attr({ href: d.edit_link, target: '_blank' })
-                        .text(wvAdmin.strings.edit_post);
+                        .text(wordvaneAdmin.strings.edit_post);
                     const parts = [$msg, $editLink];
                     if (d.view_link) {
                         parts.push($('<span>').text(' | '));
                         parts.push($('<a>').attr({ href: d.view_link, target: '_blank' })
-                            .text(wvAdmin.strings.view_post));
+                            .text(wordvaneAdmin.strings.view_post));
                     }
                     resultEl.show()
                         .removeClass('wv-result-error')
@@ -717,7 +717,7 @@
                     resultEl.show()
                         .removeClass('wv-result-success')
                         .addClass('wv-result-error')
-                        .text((res.data && res.data.message) || wvAdmin.strings.publish_error);
+                        .text((res.data && res.data.message) || wordvaneAdmin.strings.publish_error);
                 }
             }).fail(function() {
                 $('#wv-publish-saving').hide();
@@ -725,7 +725,7 @@
                 resultEl.show()
                     .removeClass('wv-result-success')
                     .addClass('wv-result-error')
-                    .text(wvAdmin.strings.err_network);
+                    .text(wordvaneAdmin.strings.err_network);
             });
         },
 
@@ -767,9 +767,9 @@
                 const pct      = Math.round((complete / total) * 100);
                 $('.wv-checklist-fill').css('width', pct + '%');
 
-                $.post(wvAdmin.ajaxurl, {
+                $.post(wordvaneAdmin.ajaxurl, {
                     action: 'wordvane_save_checklist',
-                    nonce: wvAdmin.nonce,
+                    nonce: wordvaneAdmin.nonce,
                     checklist: checked
                 });
             });

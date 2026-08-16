@@ -21,36 +21,36 @@ class Wordvane_Admin {
 			__( 'Wordvane', 'wordvane' ),
 			__( 'Wordvane', 'wordvane' ),
 			'edit_posts',
-			'wv-generator',
+			'wordvane-generator',
 			[ $this, 'page_generator' ],
 			'dashicons-edit-page',
 			30
 		);
 
 		add_submenu_page(
-			'wv-generator',
+			'wordvane-generator',
 			__( 'Generate Article', 'wordvane' ),
 			__( 'Generate Article', 'wordvane' ),
 			'edit_posts',
-			'wv-generator',
+			'wordvane-generator',
 			[ $this, 'page_generator' ]
 		);
 
 		add_submenu_page(
-			'wv-generator',
+			'wordvane-generator',
 			__( 'SEO Insights', 'wordvane' ),
 			__( 'SEO Insights', 'wordvane' ),
 			'edit_posts',
-			'wv-insights',
+			'wordvane-insights',
 			[ $this, 'page_insights' ]
 		);
 
 		add_submenu_page(
-			'wv-generator',
+			'wordvane-generator',
 			__( 'Settings', 'wordvane' ),
 			__( 'Settings', 'wordvane' ),
 			'manage_options',
-			'wv-settings',
+			'wordvane-settings',
 			[ $this, 'page_settings' ]
 		);
 
@@ -59,7 +59,7 @@ class Wordvane_Admin {
 			__( 'Setup Wizard', 'wordvane' ),
 			__( 'Setup Wizard', 'wordvane' ),
 			'manage_options',
-			'wv-wizard',
+			'wordvane-wizard',
 			[ $this, 'page_wizard' ]
 		);
 
@@ -71,17 +71,17 @@ class Wordvane_Admin {
 		 *
 		 * @since 1.0.0
 		 * @hook  wordvane_admin_menu_items
-		 * @param string $parent_slug The parent menu slug ('wv-generator').
+		 * @param string $parent_slug The parent menu slug ('wordvane-generator').
 		 */
-		do_action( 'wordvane_admin_menu_items', 'wv-generator' );
+		do_action( 'wordvane_admin_menu_items', 'wordvane-generator' );
 	}
 
 	public function enqueue_assets( $hook ) {
 		$wv_pages = [
-			'toplevel_page_wv-generator',
-			'wordvane_page_wv-insights',
-			'wordvane_page_wv-settings',
-			'admin_page_wv-wizard',
+			'toplevel_page_wordvane-generator',
+			'wordvane_page_wordvane-insights',
+			'wordvane_page_wordvane-settings',
+			'admin_page_wordvane-wizard',
 		];
 
 		if ( ! in_array( $hook, $wv_pages, true ) ) {
@@ -89,14 +89,14 @@ class Wordvane_Admin {
 		}
 
 		wp_enqueue_style(
-			'wv-admin',
+			'wordvane-admin',
 			WORDVANE_PLUGIN_URL . 'admin/css/wv-admin.css',
 			[],
 			WORDVANE_VERSION
 		);
 
 		wp_enqueue_script(
-			'wv-admin',
+			'wordvane-admin',
 			WORDVANE_PLUGIN_URL . 'admin/js/wv-admin.js',
 			[ 'jquery' ],
 			WORDVANE_VERSION,
@@ -113,7 +113,7 @@ class Wordvane_Admin {
 			&& method_exists( $fs, 'get_trial_url' );
 		$trial_url       = $trial_available ? $fs->get_trial_url() : null;
 
-		wp_localize_script( 'wv-admin', 'wvAdmin', [
+		wp_localize_script( 'wordvane-admin', 'wordvaneAdmin', [
 			'ajaxurl'        => admin_url( 'admin-ajax.php' ),
 			'nonce'          => wp_create_nonce( 'wordvane_nonce' ),
 			'wizardComplete' => (bool) get_option( 'wordvane_wizard_complete' ),
@@ -200,7 +200,7 @@ class Wordvane_Admin {
 		);
 
 		wp_send_json_success( [
-			'redirect'          => admin_url( 'admin.php?page=wv-generator&wordvane_welcome=1' ),
+			'redirect'          => admin_url( 'admin.php?page=wordvane-generator&wordvane_welcome=1' ),
 			'suggested_keyword' => $suggested_keyword,
 		] );
 	}

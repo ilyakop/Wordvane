@@ -53,7 +53,7 @@ $allowed_profiles = (int) apply_filters( 'wordvane_business_dna_profiles', 1 );
 
 	<nav class="nav-tab-wrapper">
 		<?php foreach ( $tabs as $slug => $label ) : ?>
-		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wv-settings&tab=' . urlencode( $slug ) ) ); ?>"
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wordvane-settings&tab=' . urlencode( $slug ) ) ); ?>"
 			class="nav-tab <?php echo $slug === $active_tab ? 'nav-tab-active' : ''; ?>">
 			<?php echo esc_html( $label ); ?>
 		</a>
